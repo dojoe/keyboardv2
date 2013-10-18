@@ -11,6 +11,7 @@ extern volatile enum ow_state_e ow_state;
 void ow_init(void);
 void ow_reset(void);
 void ow_start(uint8_t write_size, uint8_t read_size, void *read_buf);
+void ow_disconnect(void);
 uint8_t ow_wait(void);
 
 static inline uint8_t ow_done(void)

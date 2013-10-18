@@ -47,6 +47,7 @@
 
 #include "onewire.h"
 #include "mc-eeprom.h"
+#include "key.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -89,6 +90,8 @@ static uint8_t strptr = 0;
 void eep_normal_cb(int success)
 {
 	printf("%s\n", success ? "yay" : "nay");
+	ow_disconnect();
+	key_off();
 }
 
 void eep_read_cb(int success)
@@ -106,6 +109,14 @@ void eep_read_cb(int success)
 void handle_command(void)
 {
 	printf("%s\n", str);
+
+	if (!key_present()) {
+		printf("nope\n");
+		return;
+	}
+
+	key_on();
+
 	switch (str[0]) {
 	case 'E':
 		eep_erase(EEP_ERASE_FF, eep_normal_cb);
@@ -128,11 +139,14 @@ void handle_command(void)
 	}
 }
 
+void SetupHardware(void);
+
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
 int main(void)
 {
+	static uint8_t key_present_state = 0;
 	SetupHardware();
 
 	/* Create a regular character stream for the interface so that it can be used with the stdio.h functions */
@@ -144,6 +158,18 @@ int main(void)
 	for (;;)
 	{
 		while (1) {
+			if (ow_done()) {
+				if (key_present()) {
+					if (!key_present_state) {
+						key_on();
+						eep_read(0, sizeof(str), str, eep_read_cb);
+						key_present_state = 1;
+					}
+				} else {
+					key_present_state = 0;
+				}
+			}
+
 			int16_t rc = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
 			if (rc < 0)
 				break;

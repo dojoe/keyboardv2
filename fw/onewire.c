@@ -108,10 +108,7 @@ ISR(TIMER0_COMPA_vect)
 
 void ow_init(void)
 {
-	set_txrx(1);
-	set_tx_pin(1);
-
-	ow_state = OW_ERROR; /* Make sure the first transmission starts with a reset */
+	ow_disconnect(); /* Force sane state */
 
 	/*
 	 * Set up Timer 0 to run at F_CPU / 8 (0.5us per tick).
@@ -123,8 +120,6 @@ void ow_init(void)
 	TIFR0  = 1 << OCF0A;
 	TCCR0A = 2 << WGM00; /* CTC mode */
 	TCCR0B = 2 << CS00;  /* prescaler divide by 8 & start timer */
-
-	DDRD |= 1 << PD1;
 }
 
 void ow_reset(void)
@@ -160,6 +155,13 @@ void ow_start(uint8_t write_size, uint8_t read_size, void *read_buf)
 
 	/* Set off timer function */
 	ow_state = OW_TX;
+}
+
+void ow_disconnect(void)
+{
+	set_txrx(1);
+	set_tx_pin(0);
+	ow_state = OW_ERROR;  /* Make sure the first transmission starts with a reset */
 }
 
 uint8_t ow_wait(void)
