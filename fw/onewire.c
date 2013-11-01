@@ -38,8 +38,6 @@ ISR(TIMER0_COMPA_vect)
 	/* Get a stable local copy of the volatile control variable */
 	enum ow_state_e local_state = ow_state;
 
-	if (phase == 0) PORTD ^= 1 << PD1;
-
 	/* First of all, do the actual bit TX/RX to minimize jitter */
 	if (local_state == OW_TX) {
 		if (phase == 0) {
