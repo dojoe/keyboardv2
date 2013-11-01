@@ -48,6 +48,7 @@
 #include "onewire.h"
 #include "mc-eeprom.h"
 #include "key.h"
+#include "lcd_drv.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -139,14 +140,65 @@ void handle_command(void)
 	}
 }
 
+#define DEBOUNCE_SIZE 2
+
+uint8_t debounce[DEBOUNCE_SIZE] = {0};
+uint8_t debounce_ptr = 0;
+uint8_t input, inputs_debounced = 0, inputs_debounced_last = 0;
+
+uint8_t rot_value = 0;
+
+#define IN_ROTA (1 << PD5)
+#define IN_ROTB (1 << PD6)
+
+void poll_inputs(void)
+{
+	int i;
+	uint8_t input = PIND;
+	uint8_t debounce_low = 0x00;
+	uint8_t debounce_high = 0xFF;
+
+	debounce[debounce_ptr] = input;
+	if (debounce_ptr == DEBOUNCE_SIZE - 1)
+		debounce_ptr = 0;
+	else
+		debounce_ptr++;
+
+	for (i = 0; i < DEBOUNCE_SIZE; i++) {
+		debounce_low  |= debounce[i];
+		debounce_high &= debounce[i];
+	}
+
+	inputs_debounced |= debounce_high;
+	inputs_debounced &= debounce_low;
+
+	/* Here's the trick for the rotary encoder:
+	 *
+	 * Due to the detents, the first half of the quadrature cycle (where you have to invest force to overcome the current detent)
+	 * takes way longer than the second half (where the knob snaps into the next detent without outside help).
+	 *
+	 * The result is that depending on direction, the signal edges on either A or B are further apart than on the other signal.
+	 * So when we look for an edge, we're better off checking for edges on both signals instead of just looking for the edge on
+	 * one signal and deriving the direction from the other signal.
+	 */
+	if ((inputs_debounced_last & IN_ROTA) && !(inputs_debounced & IN_ROTA) && (inputs_debounced_last & IN_ROTB))
+		rot_value++;
+	else if ((inputs_debounced_last & IN_ROTB) && !(inputs_debounced & IN_ROTB) && (inputs_debounced_last & IN_ROTA))
+		rot_value--;
+
+	inputs_debounced_last = inputs_debounced;
+}
+
 void SetupHardware(void);
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
+int main(void) __attribute__((OS_main));
 int main(void)
 {
 	static uint8_t key_present_state = 0;
+	char str[32];
 	SetupHardware();
 
 	/* Create a regular character stream for the interface so that it can be used with the stdio.h functions */
@@ -186,6 +238,10 @@ int main(void)
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
 		eep_poll();
+		poll_inputs();
+		sprintf(str, "%d   ", rot_value);
+		lcd_xy(0, 0);
+		lcd_puts(str);
 	}
 }
 
@@ -206,6 +262,14 @@ void SetupHardware(void)
 	PORTE = 0;
 
 	ow_init();
+
+	lcd_init();
+	lcd_xy(0, 0);
+	lcd_blank(32);
+
+	DDRD &= ~(IN_ROTA | IN_ROTB);
+	PORTD |= (IN_ROTA | IN_ROTB);
+
 }
 
 /** Event handler for the library USB Connection event. */
