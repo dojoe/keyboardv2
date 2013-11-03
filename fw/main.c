@@ -189,6 +189,15 @@ void poll_inputs(void)
 	inputs_debounced_last = inputs_debounced;
 }
 
+/* Use timer/counter 3 as system tick source because
+ *  a) it has lower interrupt priority than T/C0 which is used for one-wire communication
+ *  b) it has only one PWM pin connected to package pins
+ */
+ISR(TIMER3_OVF_vect)
+{
+	poll_inputs();
+}
+
 void SetupHardware(void);
 
 /** Main program entry point. This routine contains the overall program flow, including initial
@@ -238,7 +247,6 @@ int main(void)
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
 		eep_poll();
-		poll_inputs();
 		sprintf(str, "%d   ", rot_value);
 		lcd_xy(0, 0);
 		lcd_puts(str);
@@ -270,6 +278,12 @@ void SetupHardware(void)
 	DDRD &= ~(IN_ROTA | IN_ROTB);
 	PORTD |= (IN_ROTA | IN_ROTB);
 
+	/* Set up T/C3 to run at CLK/64 and do 8-bit PWM, leading to an OCR int at F_CPU / 16k, i.e. roughly 1kHz */
+	TCNT3 = 0;
+	TIMSK3 = 1 << TOIE3;
+	TIFR3  = 1 << TOV3;
+	TCCR3A = 1 << WGM30;
+	TCCR3B = 1 << WGM32 | 3 << CS30;
 }
 
 /** Event handler for the library USB Connection event. */
