@@ -38,7 +38,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 2 2
 Title ""
-Date "13 nov 2013"
+Date "15 nov 2013"
 Rev ""
 Comp ""
 Comment1 ""
@@ -662,21 +662,21 @@ Text Label 2650 3650 0    60   ~ 0
 scio6
 Text Label 2650 3750 0    60   ~ 0
 scio7
-Text Label 4050 4550 0    60   ~ 0
-led0
-Text Label 4050 4650 0    60   ~ 0
-led1
-Text Label 4050 4750 0    60   ~ 0
-led2
-Text Label 4050 4850 0    60   ~ 0
-led3
-Text Label 4050 4950 0    60   ~ 0
-led4
-Text Label 4050 5050 0    60   ~ 0
-led5
-Text Label 4050 5150 0    60   ~ 0
-led6
 Text Label 4050 5250 0    60   ~ 0
+led0
+Text Label 4050 5150 0    60   ~ 0
+led1
+Text Label 4050 5050 0    60   ~ 0
+led2
+Text Label 4050 4950 0    60   ~ 0
+led3
+Text Label 4050 4850 0    60   ~ 0
+led4
+Text Label 4050 4750 0    60   ~ 0
+led5
+Text Label 4050 4650 0    60   ~ 0
+led6
+Text Label 4050 4550 0    60   ~ 0
 led7
 Text Label 4650 1500 0    60   ~ 0
 pwr0

@@ -1,4 +1,4 @@
-Cmp-Mod V01 Created by PcbNew date = 13/11/2013 22:29:18
+Cmp-Mod V01 Created by CvPcb (2013-07-07 BZR 4022)-stable date = 15/11/2013 22:15:20
 
 BeginCmp
 TimeStamp = /5275265D;
@@ -130,7 +130,7 @@ BeginCmp
 TimeStamp = /5275A16F;
 Reference = EXT1;
 ValeurCmp = CONN_5X2;
-IdModule  = PIN_ARRAY_5x2;
+IdModule  = PIN_ARRAY_5x2_BPAD;
 EndCmp
 
 BeginCmp
@@ -193,70 +193,70 @@ BeginCmp
 TimeStamp = /5275C658;
 Reference = JTAG1;
 ValeurCmp = CONN_5X2;
-IdModule  = PIN_ARRAY_5x2;
+IdModule  = PIN_ARRAY_5x2_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/52640185;
 Reference = K1;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/5264018E;
 Reference = K2;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/52640197;
 Reference = K3;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/526401A0;
 Reference = K4;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/526401A9;
 Reference = K5;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/526401B2;
 Reference = K6;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/526401BB;
 Reference = K7;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /526400BF/526401C4;
 Reference = K8;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
 TimeStamp = /527525FD;
 Reference = LCD1;
 ValeurCmp = LCD_TC1602A;
-IdModule  = pin_array_13x2;
+IdModule  = pin_array_16x1_BPAD;
 EndCmp
 
 BeginCmp
@@ -424,7 +424,7 @@ BeginCmp
 TimeStamp = /5275125C;
 Reference = SMAUL1;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 BeginCmp
@@ -473,7 +473,7 @@ BeginCmp
 TimeStamp = /5275C823;
 Reference = UART1;
 ValeurCmp = CONN_4;
-IdModule  = PIN_ARRAY_4x1;
+IdModule  = PIN_ARRAY_4x1_BPAD;
 EndCmp
 
 EndListe
