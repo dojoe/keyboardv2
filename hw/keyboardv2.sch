@@ -38,7 +38,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 2
 Title ""
-Date "16 nov 2013"
+Date "17 nov 2013"
 Rev ""
 Comp ""
 Comment1 ""
@@ -203,7 +203,7 @@ F 1 "POT" H 9400 3700 50  0000 C CNN
 F 2 "~" H 9400 3700 60  0000 C CNN
 F 3 "~" H 9400 3700 60  0000 C CNN
 	1    9400 3700
-	0    1    -1   0   
+	0    1    1    0   
 $EndComp
 NoConn ~ 10150 4100
 NoConn ~ 10150 4200
