@@ -1,11 +1,13 @@
-PCBNEW-LibModule-V1  17/11/2013 00:14:54
+PCBNEW-LibModule-V1  17/11/2013 17:50:46
 # encoding utf-8
 Units mm
 $INDEX
 Alps-EC11-Vert
+MARKER
 PIN_ARRAY_4x1_BPAD
 PIN_ARRAY_4x1_KEYED_BPAD
 PIN_ARRAY_5x2_BPAD
+SHACK
 TinyMega
 pin_array_16x1
 pin_array_16x1_BPAD
@@ -73,6 +75,22 @@ Ne 0 ""
 Po -5.5 0
 $EndPAD
 $EndMODULE Alps-EC11-Vert
+$MODULE MARKER
+Po 0 0 0 15 5288F220 00000000 ~~
+Li MARKER
+Sc 0
+AR 
+Op 0 0 0
+T0 0 -1.27 1 1 0 0.15 N V 21 N "MARKER"
+T1 0 1.27 1 1 0 0.15 N V 21 N "VAL**"
+$PAD
+Sh "~" C 1.397 1.397 0 0 0
+Dr 0.8128 0 0
+At STD N 00E0FFFF
+Ne 0 ""
+Po 0 0
+$EndPAD
+$EndMODULE MARKER
 $MODULE PIN_ARRAY_4x1_BPAD
 Po 0 0 0 15 52868C21 00000000 ~~
 Li PIN_ARRAY_4x1_BPAD
@@ -265,6 +283,281 @@ Of 0 0 0
 Ro 0 0 0
 $EndSHAPE3D
 $EndMODULE PIN_ARRAY_5x2_BPAD
+$MODULE SHACK
+Po 0 0 0 15 5288F3DD 00000000 ~~
+Li SHACK
+Sc 0
+AR 
+Op 0 0 0
+T0 0 -5.08 1 1 0 0.15 N V 21 N "SHACK"
+T1 0 6.35 1 1 0 0.15 N V 21 N "VAL**"
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -0.635 -0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 0.635 -0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -0.635 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 0.635 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -1.905 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -1.905 -0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 1.905 -0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 1.905 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 3.175 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -3.175 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -4.445 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 4.445 0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 3.175 -0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -3.175 -0.635
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -1.905 -1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -0.635 -1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 0.635 -1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 1.905 -1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 0.635 -3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -0.635 -3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -3.175 1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -1.905 1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -0.635 1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 0.635 1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 1.905 1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 3.175 1.905
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 3.175 3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 1.905 3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 0.635 3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -0.635 3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -1.905 3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -3.175 3.175
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -3.175 4.445
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -1.905 4.445
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po -0.635 4.445
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 0.635 4.445
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 1.905 4.445
+$EndPAD
+$PAD
+Sh "" R 0.9 0.9 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 3.175 4.445
+$EndPAD
+$EndMODULE SHACK
 $MODULE TinyMega
 Po 0 0 0 15 52874766 00000000 ~~
 Li TinyMega
