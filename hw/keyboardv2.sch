@@ -38,7 +38,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 2
 Title ""
-Date "17 nov 2013"
+Date "1 dec 2013"
 Rev ""
 Comp ""
 Comment1 ""
@@ -122,7 +122,7 @@ L R R1
 U 1 1 52643B90
 P 5400 1400
 F 0 "R1" V 5480 1400 40  0000 C CNN
-F 1 "R" V 5407 1401 40  0000 C CNN
+F 1 "180" V 5407 1401 40  0000 C CNN
 F 2 "~" V 5330 1400 30  0000 C CNN
 F 3 "~" H 5400 1400 30  0000 C CNN
 	1    5400 1400
@@ -719,13 +719,13 @@ Wire Wire Line
 Wire Wire Line
 	5000 4250 5450 4250
 Text Label 7100 4450 2    60   ~ 0
-LCD_D0
+LCD_D4
 Text Label 5000 4450 0    60   ~ 0
-LCD_D1
+LCD_D5
 Text Label 5000 4350 0    60   ~ 0
-LCD_D2
+LCD_D6
 Text Label 5000 4250 0    60   ~ 0
-LCD_D3
+LCD_D7
 Wire Wire Line
 	5450 4050 5000 4050
 Wire Wire Line
@@ -845,7 +845,7 @@ L R R2
 U 1 1 5275B6B6
 P 9400 4900
 F 0 "R2" V 9480 4900 40  0000 C CNN
-F 1 "R" V 9407 4901 40  0000 C CNN
+F 1 "220" V 9407 4901 40  0000 C CNN
 F 2 "~" V 9330 4900 30  0000 C CNN
 F 3 "~" H 9400 4900 30  0000 C CNN
 	1    9400 4900
