@@ -30,23 +30,23 @@ struct bits {
 /***************************************************************************/
 /*                       define the LCD connections:                       */
 /***************************************************************************/
-#define	LCD_D4		SBIT( PORTB, 0 )
-#define	LCD_DDR_D4	SBIT( DDRB, 0 )
+#define	LCD_D4		SBIT( PORTD, 4 )
+#define	LCD_DDR_D4	SBIT( DDRD, 4 )
 
-#define	LCD_D5		SBIT( PORTB, 1 )
-#define	LCD_DDR_D5	SBIT( DDRB, 1 )
+#define	LCD_D5		SBIT( PORTD, 5 )
+#define	LCD_DDR_D5	SBIT( DDRD, 5 )
 
-#define	LCD_D6		SBIT( PORTB, 2 )
-#define	LCD_DDR_D6	SBIT( DDRB, 2 )
+#define	LCD_D6		SBIT( PORTD, 6 )
+#define	LCD_DDR_D6	SBIT( DDRD, 6 )
 
-#define	LCD_D7		SBIT( PORTB, 3 )
-#define	LCD_DDR_D7	SBIT( DDRB, 3 )
+#define	LCD_D7		SBIT( PORTD, 7 )
+#define	LCD_DDR_D7	SBIT( DDRD, 7 )
 
-#define	LCD_RS		SBIT( PORTB, 4 )
-#define	LCD_DDR_RS	SBIT( DDRB, 4 )
+#define	LCD_RS		SBIT( PORTC, 7 )
+#define	LCD_DDR_RS	SBIT( DDRC, 7 )
 
-#define	LCD_E0		SBIT( PORTB, 6 )
-#define	LCD_DDR_E0	SBIT( DDRB, 6 )
+#define	LCD_E0		SBIT( PORTC, 6 )
+#define	LCD_DDR_E0	SBIT( DDRC, 6 )
 
 /***************************************************************************/
 /*                       END OF CUSTOMIZATION SECTION                      */
