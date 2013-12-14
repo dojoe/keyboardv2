@@ -132,10 +132,28 @@ ISR(SPI_STC_vect)
 	}
 }
 
+#define SPI_SETTINGS (1 << SPE) | (0 << DORD) | (1 << MSTR) | (0 << CPOL) | (0 << CPHA) | (2 << SPR0)
+
+void shiftreg_reset(void)
+{
+	uint8_t dummy __attribute__((unused));
+
+	SPSR = 0;
+	SPCR = SPI_SETTINGS;
+	SPDR = 0;
+	while (!(SPSR & (1 << SPIF)));
+	SPDR = 0;
+	while (!(SPSR & (1 << SPIF)));
+	dummy = SPDR; // read SPDR to clear SPIF
+	LATCH = 1;
+	SPCR = 0;
+	LATCH = 0;
+}
+
 void shiftreg_update(void)
 {
 	SPSR = 0;
-	SPCR = (1 << SPIE) | (1 << SPE) | (0 << DORD) | (1 << MSTR) | (0 << CPOL) | (0 << CPHA) | (2 << SPR0);
+	SPCR = (1 << SPIE) | SPI_SETTINGS;
 	shiftreg_state = 0;
 	SPDR = shiftreg_bytes[0];
 }
@@ -172,8 +190,17 @@ void handle_command(void)
 		shiftregs.leds = atoi(str + 1);
 		shiftreg_update();
 		break;
+	case 'm':
+		shiftregs.key_sel = atoi(str + 1);
+		shiftregs.key_en  = (str[1] == 'n');
+		shiftreg_update();
+		break;
 	case 'b':
 		call_bootloader();
+		break;
+	case 'r':
+		key_on();
+		eep_read(0, sizeof(str), str, eep_read_cb);
 		break;
 	}
 
@@ -208,34 +235,23 @@ void handle_command(void)
 #endif
 }
 
-#define DEBOUNCE_SIZE 2
-
-uint8_t debounce[DEBOUNCE_SIZE] = {0};
-uint8_t debounce_ptr = 0;
-uint8_t input, inputs_debounced = 0, inputs_debounced_last = 0;
+uint8_t inputs_prev = 0, inputs_debounced = 0, inputs_debounced_prev = 0;
 
 uint8_t rot_value = 0;
 
-#define IN_ROTA (1 << PB7)
-#define IN_ROTB (1 << PB3)
+#define IN_ROTA  (1 << PB7)
+#define IN_ROTB  (1 << PB3)
+#define IN_SMAUL (1 << PE2)
+#define IN_PUSH  (1 << PB4)
+#define IN_MASKB (IN_ROTA | IN_ROTB | IN_PUSH)
+#define IN_MASKE IN_SMAUL
 
 void poll_inputs(void)
 {
-	int i;
-	uint8_t input = PINB;
-	uint8_t debounce_low = 0x00;
-	uint8_t debounce_high = 0xFF;
-
-	debounce[debounce_ptr] = input;
-	if (debounce_ptr == DEBOUNCE_SIZE - 1)
-		debounce_ptr = 0;
-	else
-		debounce_ptr++;
-
-	for (i = 0; i < DEBOUNCE_SIZE; i++) {
-		debounce_low  |= debounce[i];
-		debounce_high &= debounce[i];
-	}
+	uint8_t inputs = (PINB & IN_MASKB) | (PINE & IN_MASKE);
+	uint8_t debounce_low = inputs | inputs_prev;
+	uint8_t debounce_high = inputs & inputs_prev;
+	inputs_prev = inputs;
 
 	inputs_debounced |= debounce_high;
 	inputs_debounced &= debounce_low;
@@ -249,12 +265,12 @@ void poll_inputs(void)
 	 * So when we look for an edge, we're better off checking for edges on both signals instead of just looking for the edge on
 	 * one signal and deriving the direction from the other signal.
 	 */
-	if ((inputs_debounced_last & IN_ROTA) && !(inputs_debounced & IN_ROTA) && (inputs_debounced_last & IN_ROTB))
+	if ((inputs_debounced_prev & IN_ROTA) && !(inputs_debounced & IN_ROTA) && (inputs_debounced_prev & IN_ROTB))
 		rot_value++;
-	else if ((inputs_debounced_last & IN_ROTB) && !(inputs_debounced & IN_ROTB) && (inputs_debounced_last & IN_ROTA))
+	else if ((inputs_debounced_prev & IN_ROTB) && !(inputs_debounced & IN_ROTB) && (inputs_debounced_prev & IN_ROTA))
 		rot_value--;
 
-	inputs_debounced_last = inputs_debounced;
+	inputs_debounced_prev = inputs_debounced;
 }
 
 /* Use timer/counter 3 as system tick source because
@@ -343,10 +359,12 @@ int main(void)
 
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
-		//eep_poll();
+		eep_poll();
+		if (ow_done()) {
 		sprintf(str, "%d   ", rot_value);
 		lcd_xy(0, 0);
 		lcd_puts(str);
+		}
 	}
 }
 
@@ -360,27 +378,27 @@ void SetupHardware(void)
 	/* Disable clock division */
 	clock_prescale_set(clock_div_1);
 
-	// TinyMega LED
-	DDRE  = (1 << PE6);
-	PORTE = (0 << PE6);
-
-	//      ENC_PUSH   | SCK        | SOUT       | ENC_A      | SMAUL_BTN  | SMAUL_LED  | LCD_LED    | ENC_B
-	DDRB  = (0 << PB0) | (1 << PB1) | (1 << PB2) | (0 << PB3) | (0 << PB4) | (1 << PB5) | (1 << PB6) | (0 << PB7);
-	PORTB = (1 << PB0) | (0 << PB1) | (0 << PB2) | (1 << PB3) | (1 << PB4) | (0 << PB5) | (0 << PB6) | (1 << PB7);
-
-	//      KEY_PWR    | KEY_SCIO   | M_RX       | M_TX       | LCD_D4     | LCD_D5     | LCD_D6     | LCD_D7
-	DDRD  = (0 << PD0) | (0 << PD1) | (0 << PD2) | (1 << PD3) | (1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7);
-	PORTD = (0 << PD0) | (0 << PD1) | (0 << PD2) | (0 << PD3) | (0 << PD4) | (0 << PD5) | (0 << PD6) | (0 << PD7);
+	//      SS         | SCK        | SOUT       | ENC_A      | ENC_PUSH   | SMAUL_LED  | LCD_LED    | ENC_B
+	DDRB  = (1 << PB0) | (1 << PB1) | (1 << PB2) | (0 << PB3) | (0 << PB4) | (1 << PB5) | (1 << PB6) | (0 << PB7);
+	PORTB = (0 << PB0) | (0 << PB1) | (0 << PB2) | (1 << PB3) | (1 << PB4) | (0 << PB5) | (0 << PB6) | (1 << PB7);
 
 	//      LCD_E      | LCD_RS
 	DDRC  = (1 << PC6) | (1 << PC7);
 	PORTC = (0 << PC6) | (0 << PC7);
 
+	//      KEY_PWR    | KEY_SCIO   | M_RX       | M_TX       | LCD_D4     | LCD_D5     | LCD_D6     | LCD_D7
+	DDRD  = (0 << PD0) | (0 << PD1) | (0 << PD2) | (1 << PD3) | (1 << PD4) | (1 << PD5) | (1 << PD6) | (1 << PD7);
+	PORTD = (0 << PD0) | (0 << PD1) | (0 << PD2) | (0 << PD3) | (0 << PD4) | (0 << PD5) | (0 << PD6) | (0 << PD7);
+
+	//      SMAUL_BTN  | TinyMega LED
+	DDRE  = (0 << PE2) | (1 << PE6);
+	PORTE = (0 << PE2) | (0 << PE6);
+
 	//      LATCH      | LCD_RW     | PF4..PF7 are JTAG
 	DDRF  = (1 << PF0) | (1 << PF1);
 	PORTF = (0 << PF0) | (0 << PF1);
 
-	shiftreg_update();
+	shiftreg_reset();
 
 	// Set up T/C 1 for 8-bit fast PWM running at F_CPU/256 (64kHz), resulting in a PWM period of 250 Hz
 	// Also, use inverted PWM so it's possible to turn the pin off completely
@@ -389,7 +407,7 @@ void SetupHardware(void)
 	TCCR1A = (1 << WGM10) | (3 << COM1A0) | (3 << COM1B0) | (0 << COM1C0);
 	TCCR1B = (1 << WGM12) | (4 << CS10);
 
-	//ow_init();
+	ow_init();
 
 	lcd_init();
 	lcd_xy(0, 0);

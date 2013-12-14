@@ -10,26 +10,31 @@ static uint8_t phase, step, shiftreg, next_bit;
 static uint8_t ow_ptr, ow_read_pos, ow_last_pos;
 static uint8_t *ow_read_buf;
 
+#define SCIO_PORT PORTD
+#define SCIO_PIN  PIND
+#define SCIO_DDR  DDRD
+#define SCIO_BIT  (1 << PD1)
+
 static inline void set_tx_pin(int value)
 {
 	if (value)
-		PORTD |= 1 << PD0;
+		SCIO_PORT |= SCIO_BIT;
 	else
-		PORTD &= ~(1 << PD0);
+		SCIO_PORT &= ~SCIO_BIT;
 }
 
 static inline int get_rx_pin(void)
 {
-	return !!(PIND & (1 << PD0));
+	return !!(SCIO_PIN & SCIO_BIT);
 }
 
 static inline void set_txrx(int tx)
 {
 	if (tx) {
-		DDRD |= 1 << PD0;
+		SCIO_DDR |= SCIO_BIT;
 	} else {
-		DDRD &= ~(1 << PD0);
-		PORTD |= 1 << PD0;
+		SCIO_DDR &= ~SCIO_BIT;
+		SCIO_PORT |= SCIO_BIT;
 	}
 }
 

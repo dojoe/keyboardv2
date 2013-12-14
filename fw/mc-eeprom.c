@@ -147,8 +147,6 @@ void eep_erase(uint8_t erase_value, eep_callback cb)
 	eep_enable_write();
 }
 
-extern FILE USBSerialStream;
-
 void eep_poll(void)
 {
 	enum eep_state_e eep_state_copy = eep_state;

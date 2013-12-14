@@ -4,7 +4,7 @@
 #define PWR_PORT  PORTD
 #define PWR_PIN   PIND
 #define PWR_DDR   DDRD
-#define PWR_BIT   (1 << PD3)
+#define PWR_BIT   (1 << PD0)
 
 uint8_t key_present(void)
 {
