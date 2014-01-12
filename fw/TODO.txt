@@ -1,0 +1,127 @@
+Pinbelegung Stecker:
+
+  Tip    - Power über 500 Ohm, Schalter an GND
+  Ring   - SCIO
+  Sleeve - GND
+
+1. Power = Out / Low
+2. SCIO = In / Pull-Up
+3. SCIO == Low? Ja -> Kurzschluss  <-- Mehrfach messen
+4. SCIO = In / High-Z
+5. Power = In / Pull-Up
+6. Power == High? Ja -> Schlüssel gesteckt
+7. Power = Out / High
+8. EEPROM auslesen
+9. Power = In / High-Z
+
+
+Was wollen wir denn?
+
+* LCD-Backlight in Idle dunkel, ansonsten hell
+   * Fade-Effekt!
+
+* Wenn man einen Schlüssel einsteckt:
+   * piep!
+   * Display zeigt an "Ohai, Kloschlüssel Mädchen" für $TIMEOUT
+   * Falls Schlüssel kaputt (kann nicht gelesen werden, Prüfsumme defekt) oder nicht für dieses Keyboard:
+      * Piepser meldet Fehler
+	    * Vier kurze Piepser, Pause, repeat
+	  * Meldung im Display
+	  * LED des Ports blinkt
+
+* Wenn man einen Schlüssel abzieht:
+   * piep!
+   * "Obai, Kloschlüssel Mädchen" in einer Zeile
+   * "Timeout: 10m" in der anderern Zeile
+   * Innerhalb $TIMEOUT kann mit Drehencoder der Timeout verstellt werden
+
+* Idle:
+   * Zeit bis Alarm, falls Schlüssel fehlt
+   * Pizzatimer 1 und 2
+   * Liste fehlender Schlüssel scrollt durch
+
+* Wenn man aus Idle heraus den Knopf dreht:
+   * Springt durch belegte Schlüsselplätze, zeigt Schlüsselnamen im Display an, nach $TIMEOUT wieder Idle
+
+* Wenn man aus Idle heraus den Knopf drückt:
+   * Startet Menü
+   * Im Menü gibts ein $MENÜ_TIMEOUT, das etwas länger ist als $TIMEOUT
+   
+Menüfunktionen:
+  * Pizzatimer (3 stück an der Zahl)
+     * Wenn Timer nicht läuft: Druck startet -> Zeitauswahl, wie wenn Schlüssel gezogen wäre
+	 * Wenn Timer läuft: Druck beendet
+
+Akustische Signale:
+  * Normaler Piep wie altes Keyboard, wenn Schlüssel-Timeout abläuft
+  * Pizzatimer: 3x schnell, gefolgt von 1-3x lang je nach Timer
+
+Zeitnotation: >= 1:00 -> "03m", < 1:00 -> "57s"
+
+Während ein Timer läuft (ausgenommen Pizzatimer?), pulsiert die LED vom Smaul-Button. >2m langsam, dann zunehmend schneller.
+Bei Alarm blinkt die LED im Takt des Piepsis.
+
+
+
+Was für Daten stehen im Schlüssel?
+
+* Nummer des Keyboards
+* Nummer des Schlüssels
+* Default Timeout
+* Max Timeout
+* Flags
+  * Rundumlichtschlüssel
+  * Piepsschlüssel
+* Name des Schlüssels
+* Name des Keyboards (damit man sagen kann "Gehört ins Elab!")
+* Prüfsumme
+
+
+Welche Module brauchen wir dafür?
+
+panel.[ch]
+
+* Piepsitreiber
+  * piepsi_start(pattern)
+  * piepsi_stop()
+
+* Steuerung für LCD-Backlight & Smaul-LED
+  * Kümmert sich um Rampe für Backlight an/aus
+    * power_lcd_backlight(bool)
+  * Pulsiert / blinkt Smaul-LED
+    * smaul_pulse(period)
+	* smaul_blink(period)
+	* smaul_off()
+
+* Input-Modul
+  * Event-Queue
+  * poll_event()
+
+* Key-LEDs
+  * led_on(number)
+  * led_blink(number)
+  * leds_off()
+
+key.[ch]
+  
+* Schlüsselverwaltung
+  * pollt Schlüssel durch
+  * liest Schlüssel aus und speichert den Status in einem globalen Array
+  * sendet Ereignisse "Schlüssel gesteckt / entfernt"
+
+serial.[ch]  
+
+* USB-Serial
+  * Dump aktueller Zustand
+     * Welche Schlüssel grad wo gesteckt?
+  * Dump Config
+  * Restore Config
+  * Schlüssel programmieren
+     * ID, Name, Flags
+	 * KB-ID, KB-Name wird aus KB-Config übernommen
+     * übernimmt implizit Schlüssel in Config
+  * Jump in Bootloader
+
+control.[ch]
+
+Zentrale State Machine
