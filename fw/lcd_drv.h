@@ -4,12 +4,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-// Access bits like variables
-struct bits {
-  uint8_t b0:1, b1:1, b2:1, b3:1, b4:1, b5:1, b6:1, b7:1;
-} __attribute__((__packed__));
-#define SBIT_(port,pin) ((*(volatile struct bits*)&port).b##pin)
-#define	SBIT(x,y)       SBIT_(x,y)
+#include "hw.h"
 
 /***************************************************************************/
 /*                       define the wanted LCD type:                       */

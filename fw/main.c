@@ -50,6 +50,7 @@
 #include "mc-eeprom.h"
 #include "key.h"
 #include "lcd_drv.h"
+#include "panel.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -108,70 +109,7 @@ void eep_read_cb(int success)
 	eep_normal_cb(success);
 }
 
-struct {
-	uint8_t key_sel:3, key_en:1, blaulicht:1, buzzer:1, nc:2;
-	uint8_t leds;
-} shiftregs = {
-	0, 1, 0, 0, 0, 0
-};
-#define shiftreg_bytes ((uint8_t *)&shiftregs)
-
-uint8_t shiftreg_state;
-
-#define LATCH SBIT(PORTF, 0)
-
-ISR(SPI_STC_vect)
-{
-	shiftreg_state++;
-	if (shiftreg_state < 2)
-		SPDR = shiftreg_bytes[shiftreg_state];
-	else {
-		LATCH = 1;
-		SPCR = 0;
-		LATCH = 0;
-	}
-}
-
-#define SPI_SETTINGS (1 << SPE) | (0 << DORD) | (1 << MSTR) | (0 << CPOL) | (0 << CPHA) | (2 << SPR0)
-
-void shiftreg_reset(void)
-{
-	uint8_t dummy __attribute__((unused));
-
-	SPSR = 0;
-	SPCR = SPI_SETTINGS;
-	SPDR = 0;
-	while (!(SPSR & (1 << SPIF)));
-	SPDR = 0;
-	while (!(SPSR & (1 << SPIF)));
-	dummy = SPDR; // read SPDR to clear SPIF
-	LATCH = 1;
-	SPCR = 0;
-	LATCH = 0;
-}
-
-void shiftreg_update(void)
-{
-	SPSR = 0;
-	SPCR = (1 << SPIE) | SPI_SETTINGS;
-	shiftreg_state = 0;
-	SPDR = shiftreg_bytes[0];
-}
-
-#define LCD_LED   OCR1B
-#define SMAUL_LED OCR1A
-
 #define LCD_LED_DIM 13
-
-static inline void set_lcd_led(uint8_t value)
-{
-	LCD_LED = 255 - value;
-}
-
-static inline void set_smaul_led(uint8_t value)
-{
-	SMAUL_LED = 255 - value;
-}
 
 void call_bootloader(void) __attribute__((noreturn));
 
@@ -235,44 +173,6 @@ void handle_command(void)
 #endif
 }
 
-uint8_t inputs_prev = 0, inputs_debounced = 0, inputs_debounced_prev = 0;
-
-uint8_t rot_value = 0;
-
-#define IN_ROTA  (1 << PB7)
-#define IN_ROTB  (1 << PB3)
-#define IN_SMAUL (1 << PE2)
-#define IN_PUSH  (1 << PB4)
-#define IN_MASKB (IN_ROTA | IN_ROTB | IN_PUSH)
-#define IN_MASKE IN_SMAUL
-
-void poll_inputs(void)
-{
-	uint8_t inputs = (PINB & IN_MASKB) | (PINE & IN_MASKE);
-	uint8_t debounce_low = inputs | inputs_prev;
-	uint8_t debounce_high = inputs & inputs_prev;
-	inputs_prev = inputs;
-
-	inputs_debounced |= debounce_high;
-	inputs_debounced &= debounce_low;
-
-	/* Here's the trick for the rotary encoder:
-	 *
-	 * Due to the detents, the first half of the quadrature cycle (where you have to invest force to overcome the current detent)
-	 * takes way longer than the second half (where the knob snaps into the next detent without outside help).
-	 *
-	 * The result is that depending on direction, the signal edges on either A or B are further apart than on the other signal.
-	 * So when we look for an edge, we're better off checking for edges on both signals instead of just looking for the edge on
-	 * one signal and deriving the direction from the other signal.
-	 */
-	if ((inputs_debounced_prev & IN_ROTA) && !(inputs_debounced & IN_ROTA) && (inputs_debounced_prev & IN_ROTB))
-		rot_value++;
-	else if ((inputs_debounced_prev & IN_ROTB) && !(inputs_debounced & IN_ROTB) && (inputs_debounced_prev & IN_ROTA))
-		rot_value--;
-
-	inputs_debounced_prev = inputs_debounced;
-}
-
 /* Use timer/counter 3 as system tick source because
  *  a) it has lower interrupt priority than T/C0 which is used for one-wire communication
  *  b) it has only one PWM pin connected to package pins
@@ -320,6 +220,7 @@ int main(void) __attribute__((OS_main));
 int main(void)
 {
 	static uint8_t key_present_state = 0;
+	uint8_t rot_value = 0;
 	SetupHardware();
 
 	/* Create a regular character stream for the interface so that it can be used with the stdio.h functions */
@@ -360,6 +261,21 @@ int main(void)
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
 		eep_poll();
+		switch (next_input_event()) {
+		case IN_ENCODER_CW:
+			rot_value++;
+			break;
+		case IN_ENCODER_CCW:
+			rot_value--;
+			break;
+		case IN_ENCODER_PUSH:
+			rot_value = 0;
+			break;
+		case IN_SMAUL_PUSH:
+			shiftregs.buzzer = !shiftregs.buzzer;
+			shiftreg_update();
+			break;
+		}
 		if (ow_done()) {
 		sprintf(str, "%d   ", rot_value);
 		lcd_xy(0, 0);

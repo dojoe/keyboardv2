@@ -18,8 +18,8 @@ F_CPU        = 16000000
 F_USB        = $(F_CPU)
 OPTIMIZATION = s
 TARGET       = keyboardv2
-SRC          = main.c Descriptors.c onewire.c mc-eeprom.c key.c lcd_drv.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
-LUFA_PATH    = LUFA-130303/LUFA
+SRC          = main.c Descriptors.c onewire.c mc-eeprom.c key.c lcd_drv.c panel.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
+LUFA_PATH    = LUFA-130901/LUFA
 CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/
 LD_FLAGS     =
 
