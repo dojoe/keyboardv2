@@ -1,0 +1,3 @@
+[submodule "fw/greatest"]
+	path = fw/greatest
+	url = https://github.com/silentbicycle/greatest

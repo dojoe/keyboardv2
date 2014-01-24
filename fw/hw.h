@@ -1,7 +1,11 @@
 #ifndef HW_H_
 #define HW_H_
 
+#ifndef __NO_INCLUDE_AVR
 #include <avr/io.h>
+#else 
+#include <stdint.h>
+#endif // __NO_INCLUDE_AVR
 
 // Access bits like variables
 struct bits {
