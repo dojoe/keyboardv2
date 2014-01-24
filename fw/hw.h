@@ -21,7 +21,7 @@ struct bits {
 #define IN_PUSH  (1 << PB4)
 
 struct shiftregs {
-	uint8_t key_sel:3, key_en:1, blaulicht:1, buzzer:1, nc:2;
+	uint8_t key_sel:3, key_en:1, blaulicht:1, beeper:1, nc:2;
 	uint8_t leds;
 };
 

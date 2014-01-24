@@ -84,7 +84,7 @@ uint8_t next_input_event(void)
 	return event_queue_empty() ? IN_NONE : event_queue[(event_queue_tail++) & (EVENT_QUEUE_SIZE - 1)];
 }
 
-void poll_inputs(void)
+static void poll_inputs(void)
 {
 	uint8_t inputs = (PINB & IN_MASKB) | (PINE & IN_MASKE);
 	uint8_t debounce_low = inputs | inputs_prev;
@@ -115,4 +115,81 @@ void poll_inputs(void)
 		push_event(IN_SMAUL_PUSH);
 
 	inputs_debounced_prev = inputs_debounced;
+}
+
+#define BEEPER_TICK_LENGTH 30
+
+uint8_t beeper_counter, beeper_tick;
+volatile uint8_t beeper_state;
+
+static void beeper_set(uint8_t on)
+{
+	//set_smaul_led(on ? 255 : 0);
+	shiftregs.beeper = on;
+	shiftreg_update();
+}
+
+static void beeper_update(void)
+{
+	uint8_t local_state;
+
+	beeper_counter--;
+	if (beeper_counter)
+		return;
+
+	beeper_counter = BEEPER_TICK_LENGTH;
+	beeper_tick++;
+
+	local_state = beeper_state;
+	switch (local_state) {
+	case BEEP_OFF:
+		break;
+	case BEEP_SINGLE:
+		if (beeper_tick == 5) {
+			beeper_set(0);
+			beeper_state = BEEP_OFF;
+		}
+		break;
+	case BEEP_KEYMISSING:
+		if ((beeper_tick & 15) == 0)
+			beeper_set(!(beeper_tick & 16));
+		break;
+	case BEEP_PIZZA1:
+	case BEEP_PIZZA2:
+	case BEEP_PIZZA3:
+		if (beeper_tick < 12) {
+			if ((beeper_tick & 1) == 0)
+				beeper_set(!(beeper_tick & 2));
+		} else if (beeper_tick < (12 + (local_state - BEEP_PIZZA1 + 1) * 16)) {
+			if (((beeper_tick - 12) & 7) == 0)
+				beeper_set(!((beeper_tick - 12) & 8));
+		} else if (beeper_tick == (80 + (local_state - BEEP_PIZZA1 + 1) * 16)) {
+			beeper_set(1);
+			beeper_tick = 0;
+		}
+		break;
+	case BEEP_ERROR:
+		if (((beeper_tick & 48) == 0) && ((beeper_tick & 1) == 0))
+				beeper_set(!(beeper_tick & 2));
+		break;
+	}
+}
+
+void beeper_start(enum beep_patterns pattern)
+{
+	beeper_state = pattern;
+	beeper_counter = BEEPER_TICK_LENGTH;
+	beeper_tick = 0;
+
+	beeper_set(pattern != BEEP_OFF);
+}
+
+/* Use timer/counter 3 as system tick source because
+ *  a) it has lower interrupt priority than T/C0 which is used for one-wire communication
+ *  b) it has only one PWM pin connected to package pins
+ */
+ISR(TIMER3_OVF_vect)
+{
+	poll_inputs();
+	beeper_update();
 }

@@ -25,7 +25,21 @@ enum input_events {
 	IN_SMAUL_PUSH
 };
 
-void poll_inputs(void);
 uint8_t next_input_event(void);
+
+enum beep_patterns {
+	BEEP_OFF = 0,
+	BEEP_SINGLE,
+	BEEP_KEYMISSING,
+	BEEP_PIZZA1,
+	BEEP_PIZZA2,
+	BEEP_PIZZA3,
+	BEEP_ERROR,
+};
+
+void beeper_start(uint8_t pattern);
+static void beeper_stop(void) {
+	beeper_start(BEEP_OFF);
+}
 
 #endif /* PANEL_H_ */

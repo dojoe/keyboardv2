@@ -173,15 +173,6 @@ void handle_command(void)
 #endif
 }
 
-/* Use timer/counter 3 as system tick source because
- *  a) it has lower interrupt priority than T/C0 which is used for one-wire communication
- *  b) it has only one PWM pin connected to package pins
- */
-ISR(TIMER3_OVF_vect)
-{
-	poll_inputs();
-}
-
 void SetupHardware(void);
 
 /* Bootloader jump code adapted from http://www.fourwalledcubicle.com/files/LUFA/Doc/120219/html/_page__software_bootloader_start.html */
@@ -272,8 +263,9 @@ int main(void)
 			rot_value = 0;
 			break;
 		case IN_SMAUL_PUSH:
-			shiftregs.buzzer = !shiftregs.buzzer;
-			shiftreg_update();
+			if (rot_value == 254)
+				call_bootloader();
+			beeper_start(rot_value);
 			break;
 		}
 		if (ow_done()) {
@@ -364,4 +356,3 @@ void EVENT_USB_Device_ControlRequest(void)
 {
 	CDC_Device_ProcessControlRequest(&VirtualSerial_CDC_Interface);
 }
-
