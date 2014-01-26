@@ -37,6 +37,11 @@ struct shiftregs {
 };
 
 
+#ifndef __NO_INCLUDE_AVR
+#include "panel.h"
+#endif // __NO_INCLUDE_AVR
+
+
 // Magic Constnats:
 
 #define KEY_ID_PIZZATIMER_OFFSET 									250

@@ -89,11 +89,48 @@ TEST menu_selectsPizzaTimerN_whenButtonIsPressedInMenu(int timesButtonDownBefore
   menu_activate();
 
   // assertion: should have triggered some action on the selected timer.
-  ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
+  ASSERT_EQ(menu_state, MENU_STATE_SELECT_REPAINT);
   ASSERT_EQ(selected_key, selectedKey);
   PASS();
 }
 
+TEST menu_addsOneSecond_whenButtonUpIsPressed() {
+  extern int menu_state, selected_key, selected_time;
+
+  // fixture: go to the pizzatimer 1 - time selection.
+  menu_reset();
+  menu_activate();
+  menu_activate();
+
+  // execution: press down button
+  menu_button_up();
+  menu_loop();
+
+  // assertion: should be in time selection mode for pizzatimer and have a time of 301 seconds selected
+  ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
+  ASSERT_EQ(selected_key, KEY_ID_PIZZATIMER_1);
+  ASSERT_EQ(selected_time, 301);
+  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    05:01"), 0);
+}
+
+TEST menu_subtractsOneSecond_whenButtonDownIsPressed() {
+  extern int menu_state, selected_key, selected_time;
+
+  // fixture: go to the pizzatimer 1 - time selection.
+  menu_reset();
+  menu_activate();
+  menu_activate();
+
+  // execution: press down button
+  menu_button_down();
+  menu_loop();
+
+  // assertion: should be in time selection mode for pizzatimer and have a time of 301 seconds selected
+  ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
+  ASSERT_EQ(selected_key, KEY_ID_PIZZATIMER_1);
+  ASSERT_EQ(selected_time, 299);
+  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    04:59"), 0);
+}
 
 
 
@@ -119,7 +156,8 @@ SUITE (menu_functionality) {
   RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 2, MENU_STATE_PIZZA3, KEY_ID_PIZZATIMER_3);
 
   // zeit einstellen fuer irgendwas
-  
+  RUN_TEST(menu_addsOneSecond_whenButtonUpIsPressed);  
+  RUN_TEST(menu_subtractsOneSecond_whenButtonDownIsPressed);  
 
   // timeout -> menu beendet
 

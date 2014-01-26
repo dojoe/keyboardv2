@@ -24,10 +24,13 @@ void lcd_puts( void *s )
     lcd_putchar( *s1 );
 }
 
-
 void lcd_blank( uint8_t len )                   // blank n digits
 {
   memset(LCD_CONTENTS, 0, NUM_LCD_LINES * NUM_LCD_COLS);
+  lcdPos = 0;
+}
+
+void lcd_command(uint8_t x) {
   lcdPos = 0;
 }
 

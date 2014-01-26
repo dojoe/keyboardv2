@@ -10,3 +10,6 @@ menu_tests: menu_tests.o ../menu.o
 	./test-Menus
 	rm ./test-Menus menu_tests.o ../menu.o
 
+clean: 
+	rm -f menu_test.o ../menu.o ./test-Menus
+
