@@ -109,8 +109,6 @@ void eep_read_cb(int success)
 	eep_normal_cb(success);
 }
 
-#define LCD_LED_DIM 13
-
 void call_bootloader(void) __attribute__((noreturn));
 
 void handle_command(void)
@@ -265,7 +263,22 @@ int main(void)
 		case IN_SMAUL_PUSH:
 			if (rot_value == 254)
 				call_bootloader();
-			beeper_start(rot_value);
+			else if (rot_value >= 70)
+				keyled_blink(rot_value - 70);
+			else if (rot_value == 69)
+				keyleds_off();
+			else if (rot_value >= 60)
+				keyled_on(rot_value - 60);
+			else if (rot_value > 40)
+				smaul_blink(rot_value - 40);
+			else if (rot_value > 20)
+				smaul_pulse(rot_value - 20);
+			else if (rot_value == 20)
+				smaul_off();
+			else if (rot_value > 10)
+				set_lcd_backlight(rot_value == 11);
+			else
+				beeper_start(rot_value);
 			break;
 		}
 		if (ow_done()) {

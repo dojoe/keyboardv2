@@ -119,8 +119,8 @@ static void poll_inputs(void)
 
 #define BEEPER_TICK_LENGTH 30
 
-uint8_t beeper_counter, beeper_tick;
-volatile uint8_t beeper_state;
+static uint8_t beeper_counter, beeper_tick;
+static volatile uint8_t beeper_state;
 
 static void beeper_set(uint8_t on)
 {
@@ -184,6 +184,152 @@ void beeper_start(enum beep_patterns pattern)
 	beeper_set(pattern != BEEP_OFF);
 }
 
+enum lcd_led_state {
+	LCD_NONE = 0,
+	LCD_BRIGHT,
+	LCD_DARK,
+};
+
+enum smaul_led_state {
+	SMAUL_OFF = 0,
+	SMAUL_PULSE,
+	SMAUL_BLINK,
+};
+
+#define LCD_LED_DIM  13
+#define LCD_LED_ON   255
+#define LCD_LED_UP   42
+#define LCD_LED_DOWN 3
+
+static volatile uint8_t global_ms_timer;
+static volatile uint8_t global_qs_timer;
+
+static uint8_t lcd_led_brightness = LCD_LED_DIM;
+static uint8_t smaul_led_osc = 0;
+static volatile uint8_t lcd_led_state = LCD_NONE;
+static volatile uint8_t smaul_led_state = SMAUL_OFF;
+static volatile uint8_t smaul_led_frequency;
+
+#if 0
+/* Generate gamma table for smaul LED driver */
+#include <stdio.h>
+#include <math.h>
+
+int main(void)
+{
+	int i;
+	double x, y;
+	for (i = 0; i < 64; i++) {
+		x = (double)i / 63.0;
+		y = pow(x, 2.2);
+		printf("%i, ", (int)floor((y * 255.0) + 0.5));
+	}
+	return 0;
+}
+#endif
+
+static const uint8_t gamma[64] = {
+		0, 0, 0, 0, 1, 1, 1, 2, 3, 4, 4, 5, 7, 8, 9, 11, 13, 14, 16, 18, 20, 23, 25, 28, 31, 33, 36, 40, 43, 46, 50, 54, 57, 61,
+		66, 70, 74, 79, 84, 89, 94, 99, 105, 110, 116, 122, 128, 134, 140, 147, 153, 160, 167, 174, 182, 189, 197, 205, 213, 221,
+		229, 238, 246, 255,
+};
+
+static void pwmled_update(void)
+{
+	uint8_t smaul_led_state_copy = smaul_led_state;
+
+	if (lcd_led_state == LCD_NONE && smaul_led_state_copy == SMAUL_OFF)
+		return;
+
+	if (global_ms_timer & 15)
+		return;
+
+	switch (lcd_led_state) {
+	case LCD_BRIGHT:
+		if (lcd_led_brightness < LCD_LED_ON - LCD_LED_UP) {
+			lcd_led_brightness += LCD_LED_UP;
+		} else {
+			lcd_led_brightness = LCD_LED_ON;
+			lcd_led_state = LCD_NONE;
+		}
+		set_lcd_led(lcd_led_brightness);
+		break;
+	case LCD_DARK:
+		if (lcd_led_brightness > LCD_LED_DIM + LCD_LED_DOWN) {
+			lcd_led_brightness -= LCD_LED_DOWN;
+		} else {
+			lcd_led_brightness = LCD_LED_DIM;
+			lcd_led_state = LCD_NONE;
+		}
+		set_lcd_led(lcd_led_brightness);
+		break;
+	}
+
+	if (smaul_led_state_copy != SMAUL_OFF) {
+		smaul_led_osc += smaul_led_frequency;
+		if (smaul_led_state_copy == SMAUL_BLINK) {
+			set_smaul_led((smaul_led_osc & 128) ? 255 : 0);
+		} else {
+			uint8_t brightness = (smaul_led_osc >> 1) & 63;
+			set_smaul_led((smaul_led_osc & 128) ? gamma[brightness] : gamma[63 - brightness]);
+		}
+	}
+}
+
+void set_lcd_backlight(uint8_t on)
+{
+	lcd_led_state = on ? LCD_BRIGHT : LCD_DARK;
+}
+
+void smaul_pulse(uint8_t frequency)
+{
+	smaul_led_frequency = frequency;
+	smaul_led_state = SMAUL_PULSE;
+}
+
+void smaul_blink(uint8_t frequency)
+{
+	smaul_led_frequency = frequency;
+	smaul_led_state = SMAUL_BLINK;
+}
+
+void smaul_off(void)
+{
+	smaul_led_state = SMAUL_OFF;
+	set_smaul_led(0);
+}
+
+static volatile uint8_t led_blink_mask = 0;
+
+static void keyleds_update(void)
+{
+	uint8_t led_blink_mask_copy = led_blink_mask;
+	if (led_blink_mask_copy && (global_qs_timer & 1)) {
+		shiftregs.leds ^= led_blink_mask_copy;
+		shiftreg_update();
+	}
+}
+
+void keyled_on(uint8_t which)
+{
+	led_blink_mask = 0;
+	shiftregs.leds = 1 << which;
+	shiftreg_update();
+}
+
+void keyled_blink(uint8_t which)
+{
+	shiftregs.leds = 0;
+	led_blink_mask = 1 << which;
+}
+
+void keyleds_off(void)
+{
+	led_blink_mask = 0;
+	shiftregs.leds = 0;
+	shiftreg_update();
+}
+
 /* Use timer/counter 3 as system tick source because
  *  a) it has lower interrupt priority than T/C0 which is used for one-wire communication
  *  b) it has only one PWM pin connected to package pins
@@ -192,4 +338,10 @@ ISR(TIMER3_OVF_vect)
 {
 	poll_inputs();
 	beeper_update();
+	pwmled_update();
+	global_ms_timer++;
+	if (!global_ms_timer) {
+		global_qs_timer++;
+		keyleds_update();
+	}
 }
