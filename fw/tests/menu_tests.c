@@ -6,13 +6,23 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
+#define __STDC_VERSION__ 19901l
 #include <greatest.h>
 
 #include "lcd_drv_mock.h"
 
 
 TEST menu_doesNotChangeDisplayContents_whenNotActivated() {
+	// fixtrure: initialise the menu
+  menu_reset();
 
+  // execution: do nothing and loop
+  menu_loop();
+
+  // assertion: should not have changed the display contents
+  ASSERT_EQ(strncmp(LCD_CONTENTS, "", 1), 0);
+  PASS();
 }
 
 TEST menu_printsPizzatimer1_whenButtonIsPressed() {
@@ -23,19 +33,65 @@ TEST menu_printsPizzatimer1_whenButtonIsPressed() {
   menu_activate();
   menu_loop();
 
-  // should have printed Pizzatimer 1 in the display
+  // assertion: should have printed Pizzatimer 1 in the display
   ASSERT_EQ( strncmp(LCD_CONTENTS, "Pizzatimer 1", sizeof("Pizzatimer 1")), 0);
+  PASS();
 }
 
-TEST menu_printsPizzatimer2_whenDownbuttonIsPressedFromPizzatimer1Entry() {
+TEST menu_printsPizzatimerN_whenDownbuttonIsPressedFromPizzatimer1Entry(int timesButtonDownBefore, const char* expectedString) {
+	// fixture: activate pizza timer X 
+  menu_reset();
+  menu_activate();
+  int ttt = timesButtonDownBefore;
+  for (; timesButtonDownBefore--;) {
+    menu_button_down();
+  }
 
+  // execution: press down button
+  menu_button_down();
+  menu_loop();
+
+  // should print "Pizzatimer 2" now
+  ASSERT_EQ( strncmp(LCD_CONTENTS, expectedString, strlen(expectedString)), 0);
+  PASS();
 }
+
+TEST menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry(int timesButtonDownBefore, const char* expectedString) {
+	// fixture: activate pizza timer X 
+  menu_reset();
+  menu_activate();
+  int ttt = timesButtonDownBefore;
+  for (; timesButtonDownBefore--;) {
+    menu_button_down();
+  }
+
+  // execution: press down button
+  menu_button_up();
+  menu_loop();
+
+  // should print "Pizzatimer 2" now
+  ASSERT_EQ( strncmp(LCD_CONTENTS, expectedString, strlen(expectedString)), 0);
+  PASS();
+}
+
 
 
 
 SUITE (menu_functionality) {
+  RUN_TEST(menu_doesNotChangeDisplayContents_whenNotActivated);
+
+  // Menu akivieren
 	RUN_TEST(menu_printsPizzatimer1_whenButtonIsPressed);
-  RUN_TEST(menu_printsPizzatimer2_whenDownbuttonIsPressedFromPizzatimer1Entry);
+
+  // Button nach unten
+  RUN_TESTp(menu_printsPizzatimerN_whenDownbuttonIsPressedFromPizzatimer1Entry, 0, "Pizzatimer 2");
+  RUN_TESTp(menu_printsPizzatimerN_whenDownbuttonIsPressedFromPizzatimer1Entry, 1, "Pizzatimer 3");
+  RUN_TESTp(menu_printsPizzatimerN_whenDownbuttonIsPressedFromPizzatimer1Entry, 2, "Pizzatimer 1");
+  
+  // Button nach oben
+  RUN_TESTp(menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry, 0, "Pizzatimer 3");
+  RUN_TESTp(menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry, 1, "Pizzatimer 1");
+  RUN_TESTp(menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry, 2, "Pizzatimer 2");
 }
 
 
