@@ -74,8 +74,8 @@ TEST menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry(int timesB
   PASS();
 }
 
-TEST menu_selectsPizzaTimerN_whenButtonIsPressedInMenu(int timesButtonDownBefore, int targetMenuState) {
-  extern int menu_state;
+TEST menu_selectsPizzaTimerN_whenButtonIsPressedInMenu(int timesButtonDownBefore, int targetMenuState, int selectedKey) {
+  extern int menu_state, selected_key;
 
   // fixture: make timer n the current menu entry
   menu_reset();
@@ -89,8 +89,8 @@ TEST menu_selectsPizzaTimerN_whenButtonIsPressedInMenu(int timesButtonDownBefore
   menu_activate();
 
   // assertion: should have triggered some action on the selected timer.
-  ASSERT_EQ(menu_state, MENU_STATE_INACTIVE);
-  // TODO: waaaaarbl i need some mock to test this on ;)
+  ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
+  ASSERT_EQ(selected_key, selectedKey);
   PASS();
 }
 
@@ -114,9 +114,17 @@ SUITE (menu_functionality) {
   RUN_TESTp(menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry, 2, "Pizzatimer 2");
 
   // timer auswählen
-  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 0, MENU_STATE_PIZZA1);
-  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 1, MENU_STATE_PIZZA2);
-  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 2, MENU_STATE_PIZZA3);
+  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 0, MENU_STATE_PIZZA1, KEY_ID_PIZZATIMER_1);
+  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 1, MENU_STATE_PIZZA2, KEY_ID_PIZZATIMER_2);
+  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 2, MENU_STATE_PIZZA3, KEY_ID_PIZZATIMER_3);
+
+  // zeit einstellen fuer irgendwas
+  
+
+  // timeout -> menu beendet
+
+
+  // timeout -> laenge beendet
 }
 
 

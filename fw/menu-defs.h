@@ -4,4 +4,6 @@
 #define MENU_STATE_PIZZA1					1
 #define MENU_STATE_PIZZA2					2
 #define MENU_STATE_PIZZA3					3
+#define MENU_STATE_SELECT_TIME		4
+
 

@@ -36,4 +36,12 @@ struct shiftregs {
 	uint8_t leds;
 };
 
+
+// Magic Constnats:
+
+#define KEY_ID_PIZZATIMER_OFFSET 									250
+#define KEY_ID_PIZZATIMER_1												(KEY_ID_PIZZATIMER_OFFSET+0)
+#define KEY_ID_PIZZATIMER_2												(KEY_ID_PIZZATIMER_OFFSET+1)
+#define KEY_ID_PIZZATIMER_3												(KEY_ID_PIZZATIMER_OFFSET+2)
+
 #endif /* HW_H_ */
