@@ -109,8 +109,8 @@ TEST menu_addsOneSecond_whenButtonUpIsPressed() {
   // assertion: should be in time selection mode for pizzatimer and have a time of 301 seconds selected
   ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
   ASSERT_EQ(selected_key, KEY_ID_PIZZATIMER_1);
-  ASSERT_EQ(selected_time, 301);
-  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    05:01"), 0);
+  ASSERT_EQ(selected_time, 360);
+  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    06:00"), 0);
 }
 
 TEST menu_subtractsOneSecond_whenButtonDownIsPressed() {
@@ -128,10 +128,53 @@ TEST menu_subtractsOneSecond_whenButtonDownIsPressed() {
   // assertion: should be in time selection mode for pizzatimer and have a time of 301 seconds selected
   ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
   ASSERT_EQ(selected_key, KEY_ID_PIZZATIMER_1);
-  ASSERT_EQ(selected_time, 299);
-  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    04:59"), 0);
+  ASSERT_EQ(selected_time, 240);
+  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    04:00"), 0);
 }
 
+TEST menu_capsSeconds_whenButtonIsUpAndTimeIs99Minutes() {
+  extern int menu_state, selected_key, selected_time;
+  int x;
+
+  // fixture: go to the pizzatimer 1 - time selection.
+  menu_reset();
+  menu_activate();
+  menu_activate();
+
+  // execution: press down button
+  for (x = 0; x < 100; x++) {
+    menu_button_up();
+  }
+  menu_loop();
+
+  // assertion: should be in time selection mode for pizzatimer and have a time of 301 seconds selected
+  ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
+  ASSERT_EQ(selected_key, KEY_ID_PIZZATIMER_1);
+  ASSERT_EQ(selected_time, 5940);
+  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    99:00"), 0);
+}
+
+TEST menu_capsSeconds_whenButtonIsDownAndTimeIs0Minutes() {
+  extern int menu_state, selected_key, selected_time;
+  int x;
+
+  // fixture: go to the pizzatimer 1 - time selection.
+  menu_reset();
+  menu_activate();
+  menu_activate();
+
+  // execution: press down button
+  for (x = 0; x < 100; x++) {
+    menu_button_down();
+  }
+  menu_loop();
+
+  // assertion: should be in time selection mode for pizzatimer and have a time of 301 seconds selected
+  ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
+  ASSERT_EQ(selected_key, KEY_ID_PIZZATIMER_1);
+  ASSERT_EQ(selected_time, 60);
+  ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    01:00"), 0);
+}
 
 
 SUITE (menu_functionality) {
@@ -158,6 +201,8 @@ SUITE (menu_functionality) {
   // zeit einstellen fuer irgendwas
   RUN_TEST(menu_addsOneSecond_whenButtonUpIsPressed);  
   RUN_TEST(menu_subtractsOneSecond_whenButtonDownIsPressed);  
+  RUN_TEST(menu_capsSeconds_whenButtonIsUpAndTimeIs99Minutes);
+  RUN_TEST(menu_capsSeconds_whenButtonIsDownAndTimeIs0Minutes);
 
   // timeout -> menu beendet
 

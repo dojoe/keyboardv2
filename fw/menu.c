@@ -69,7 +69,7 @@ void menu_button_down() {
 
     case MENU_STATE_SELECT_REPAINT:
     case MENU_STATE_SELECT_TIME: menu_state = MENU_STATE_SELECT_REPAINT;
-                                 selected_time--;
+                                 selected_time = max(60, selected_time-60);
                                  break;
   }
 }
@@ -82,7 +82,7 @@ void menu_button_up() {
 
     case MENU_STATE_SELECT_REPAINT:
     case MENU_STATE_SELECT_TIME: menu_state = MENU_STATE_SELECT_REPAINT;
-                                 selected_time++;
+                                 selected_time = min(99*60, selected_time+60);
                                  break;
   }
 }

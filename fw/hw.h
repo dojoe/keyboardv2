@@ -36,6 +36,8 @@ struct shiftregs {
 	uint8_t leds;
 };
 
+#define min(x,y)  ((x)<(y) ? (x) : (y))
+#define max(x,y)  ((x)>(y) ? (x) : (y))
 
 #ifndef __NO_INCLUDE_AVR
 #include "panel.h"
