@@ -5,14 +5,20 @@
 
 
 
-static int menu_state = 0;
+int menu_state = 0;
 
 void menu_reset() {
   menu_state = MENU_STATE_INACTIVE;
 }
 
 void menu_activate() {
-  menu_state = MENU_STATE_PIZZA1;
+  switch (menu_state) {
+    // enable the menu;
+    case MENU_STATE_INACTIVE: menu_state = MENU_STATE_PIZZA1; break;
+    case MENU_STATE_PIZZA1:   /* TODO: trigger some action */ ; menu_state = MENU_STATE_INACTIVE; break;
+    case MENU_STATE_PIZZA2:   /* TODO: trigger some action */ ; menu_state = MENU_STATE_INACTIVE; break;
+    case MENU_STATE_PIZZA3:   /* TODO: trigger some action */ ; menu_state = MENU_STATE_INACTIVE; break;
+  }
 }
 
 void menu_loop() {

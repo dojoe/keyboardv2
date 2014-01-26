@@ -11,6 +11,7 @@
 #include <greatest.h>
 
 #include "lcd_drv_mock.h"
+#include "../menu-defs.h"
 
 
 TEST menu_doesNotChangeDisplayContents_whenNotActivated() {
@@ -60,7 +61,6 @@ TEST menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry(int timesB
 	// fixture: activate pizza timer X 
   menu_reset();
   menu_activate();
-  int ttt = timesButtonDownBefore;
   for (; timesButtonDownBefore--;) {
     menu_button_down();
   }
@@ -71,6 +71,26 @@ TEST menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry(int timesB
 
   // should print "Pizzatimer 2" now
   ASSERT_EQ( strncmp(LCD_CONTENTS, expectedString, strlen(expectedString)), 0);
+  PASS();
+}
+
+TEST menu_selectsPizzaTimerN_whenButtonIsPressedInMenu(int timesButtonDownBefore, int targetMenuState) {
+  extern int menu_state;
+
+  // fixture: make timer n the current menu entry
+  menu_reset();
+  menu_activate();
+  for (; timesButtonDownBefore--;) {
+    menu_button_down();
+  }
+
+  // execution: press the button
+  ASSERT_EQ(menu_state, targetMenuState);
+  menu_activate();
+
+  // assertion: should have triggered some action on the selected timer.
+  ASSERT_EQ(menu_state, MENU_STATE_INACTIVE);
+  // TODO: waaaaarbl i need some mock to test this on ;)
   PASS();
 }
 
@@ -92,6 +112,11 @@ SUITE (menu_functionality) {
   RUN_TESTp(menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry, 0, "Pizzatimer 3");
   RUN_TESTp(menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry, 1, "Pizzatimer 1");
   RUN_TESTp(menu_printsPizzatimerN_whenUpButtonIsPressedFromPizzatimer1Entry, 2, "Pizzatimer 2");
+
+  // timer auswählen
+  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 0, MENU_STATE_PIZZA1);
+  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 1, MENU_STATE_PIZZA2);
+  RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 2, MENU_STATE_PIZZA3);
 }
 
 
