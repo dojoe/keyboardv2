@@ -10,6 +10,7 @@
 #define __STDC_VERSION__ 19901l
 #include <greatest.h>
 
+#include "../menu.c"
 #include "lcd_drv_mock.h"
 #include "../menu-defs.h"
 
@@ -176,6 +177,30 @@ TEST menu_capsSeconds_whenButtonIsDownAndTimeIs0Minutes() {
   ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    01:00"), 0);
 }
 
+TEST menu_goesAway_whenTimeoutOccurs() {
+  extern int menu_state, menu_timer;
+  extern void menutimer();
+
+  // fixture: go to pizzatimer 1 menu
+  menu_reset();
+  menu_activate();
+
+  // execution: wait for $TIME
+  int i;
+  for (i = 0; i < MENU_TIMEOUT_SECONDS; i++) {
+    menutimer();
+printf("%d - %d: %d\n",i, menu_timer, menu_state);
+    ASSERT_EQ(menu_state, MENU_STATE_PIZZA1);
+  }
+
+printf("%d - %d: %d\n",i, menu_timer, menu_state);
+  // assertion: after MENU_TIMEOUT_SECONDS seconds the timer should have triggered exit of the menu.
+  ASSERT_EQ(menu_state, MENU_STATE_INACTIVE);
+  PASS();
+}
+
+
+
 
 SUITE (menu_functionality) {
   RUN_TEST(menu_doesNotChangeDisplayContents_whenNotActivated);
@@ -205,7 +230,7 @@ SUITE (menu_functionality) {
   RUN_TEST(menu_capsSeconds_whenButtonIsDownAndTimeIs0Minutes);
 
   // timeout -> menu beendet
-
+  RUN_TEST(menu_goesAway_whenTimeoutOccurs);
 
   // timeout -> laenge beendet
 }

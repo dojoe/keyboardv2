@@ -1,5 +1,6 @@
 
 
+#define MENU_TIMEOUT_SECONDS		  20
 #define PIZZA_TIMER_DEFAULT_TIME 300
 
 

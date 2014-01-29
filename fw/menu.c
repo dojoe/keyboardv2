@@ -8,16 +8,19 @@
 int menu_state = 0;
 int selected_key = 0;
 int selected_time = 0;
-
+int menu_timer = 0;
 
 void menu_reset() {
   menu_state = MENU_STATE_INACTIVE;
+  menu_timer = 0;
 }
 
 void menu_activate() {
+  menu_timer =  MENU_TIMEOUT_SECONDS + 1;
   switch (menu_state) {
     // enable the menu;
-    case MENU_STATE_INACTIVE: menu_state = MENU_STATE_PIZZA1; break;
+    case MENU_STATE_INACTIVE: menu_state = MENU_STATE_PIZZA1; 
+                              break;
     case MENU_STATE_PIZZA1:   selected_time = PIZZA_TIMER_DEFAULT_TIME; 
                               selected_key = KEY_ID_PIZZATIMER_1; 
                               menu_state = MENU_STATE_SELECT_REPAINT; 
@@ -85,6 +88,15 @@ void menu_button_up() {
                                  selected_time = min(99*60, selected_time+60);
                                  break;
   }
+}
+
+void menutimer() {
+  menu_timer--;
+/*  if (menu_timer < 1) {
+ printf("here\n");
+    menu_state = MENU_STATE_INACTIVE;
+    menu_timer = 0;
+  }*/   
 }
 
 
