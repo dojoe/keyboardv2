@@ -187,13 +187,12 @@ TEST menu_goesAway_whenTimeoutOccurs() {
 
   // execution: wait for $TIME
   int i;
-  for (i = 0; i < MENU_TIMEOUT_SECONDS; i++) {
+  for (i = 0; i < MENU_TIMEOUT_SECONDS-1; i++) {
     menutimer();
-printf("%d - %d: %d\n",i, menu_timer, menu_state);
     ASSERT_EQ(menu_state, MENU_STATE_PIZZA1);
   }
+  menutimer();
 
-printf("%d - %d: %d\n",i, menu_timer, menu_state);
   // assertion: after MENU_TIMEOUT_SECONDS seconds the timer should have triggered exit of the menu.
   ASSERT_EQ(menu_state, MENU_STATE_INACTIVE);
   PASS();

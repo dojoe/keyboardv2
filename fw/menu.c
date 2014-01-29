@@ -93,7 +93,6 @@ void menu_button_up() {
 void menutimer() {
   menu_timer--;
   if (menu_timer < 1) {
- printf("here\n");
     menu_state = MENU_STATE_INACTIVE;
     menu_timer = 0;
   }
