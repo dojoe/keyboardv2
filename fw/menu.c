@@ -16,7 +16,7 @@ void menu_reset() {
 }
 
 void menu_activate() {
-  menu_timer =  MENU_TIMEOUT_SECONDS + 1;
+  menu_timer =  MENU_TIMEOUT_SECONDS;
   switch (menu_state) {
     // enable the menu;
     case MENU_STATE_INACTIVE: menu_state = MENU_STATE_PIZZA1; 
@@ -92,11 +92,11 @@ void menu_button_up() {
 
 void menutimer() {
   menu_timer--;
-/*  if (menu_timer < 1) {
+  if (menu_timer < 1) {
  printf("here\n");
     menu_state = MENU_STATE_INACTIVE;
     menu_timer = 0;
-  }*/   
+  }
 }
 
 
