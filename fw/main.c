@@ -46,6 +46,7 @@
 
 #include <LUFA/Drivers/USB/USB.h>
 
+#include "common.h"
 #include "onewire.h"
 #include "mc-eeprom.h"
 #include "key.h"
@@ -90,27 +91,6 @@ static FILE USBSerialStream;
 static char str[100];
 static uint8_t strptr = 0;
 
-void eep_normal_cb(int success)
-{
-	printf("%s\n", success ? "yay" : "nay");
-	ow_disconnect();
-	key_off();
-}
-
-void eep_read_cb(int success)
-{
-	if (success) {
-		int i;
-		for (i = 0; i < sizeof(str); i++)
-			printf("%02x ", str[i]);
-		str[sizeof(str) - 1] = 0;
-		printf("\n%s\n", str);
-	}
-	eep_normal_cb(success);
-}
-
-void call_bootloader(void) __attribute__((noreturn));
-
 void handle_command(void)
 {
 	printf("%s\n", str);
@@ -133,10 +113,6 @@ void handle_command(void)
 		break;
 	case 'b':
 		call_bootloader();
-		break;
-	case 'r':
-		key_on();
-		eep_read(0, sizeof(str), str, eep_read_cb);
 		break;
 	}
 
@@ -173,42 +149,12 @@ void handle_command(void)
 
 void SetupHardware(void);
 
-/* Bootloader jump code adapted from http://www.fourwalledcubicle.com/files/LUFA/Doc/120219/html/_page__software_bootloader_start.html */
-
-uint32_t boot_key ATTR_NO_INIT;
-
-#define BOOT_KEY_MAGIC 0xCAFEBABE
-
-void bootloader_check(void) ATTR_INIT_SECTION(3);
-void bootloader_check(void)
-{
-	#define FLASH_SIZE_BYTES 32768
-	#define BOOTLOADER_SEC_SIZE_BYTES 4096
-	#define BOOTLOADER_START_ADDRESS  (FLASH_SIZE_BYTES - BOOTLOADER_SEC_SIZE_BYTES)
-
-	if (((MCUSR & (1 << PORF)) && !(PINE & (1 << PE2))) || ((MCUSR & (1 << WDRF)) && (boot_key == BOOT_KEY_MAGIC))) {
-		boot_key = 0;
-		((void (*)(void))BOOTLOADER_START_ADDRESS)();
-	}
-}
-
-void call_bootloader(void)
-{
-	USB_Disable();
-	cli();
-	boot_key = BOOT_KEY_MAGIC;
-	_delay_ms(2000);
-	wdt_enable(WDTO_30MS);
-	while (1);
-}
-
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
 int main(void) __attribute__((OS_main));
 int main(void)
 {
-	static uint8_t key_present_state = 0;
 	uint8_t rot_value = 0;
 	SetupHardware();
 
@@ -250,17 +196,18 @@ int main(void)
 		CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
 		USB_USBTask();
 		eep_poll();
-		switch (next_input_event()) {
-		case IN_ENCODER_CW:
+		key_poll();
+		switch (get_event()) {
+		case EV_ENCODER_CW:
 			rot_value++;
 			break;
-		case IN_ENCODER_CCW:
+		case EV_ENCODER_CCW:
 			rot_value--;
 			break;
-		case IN_ENCODER_PUSH:
+		case EV_ENCODER_PUSH:
 			rot_value = 0;
 			break;
-		case IN_SMAUL_PUSH:
+		case EV_SMAUL_PUSH:
 			if (rot_value == 254)
 				call_bootloader();
 			else if (rot_value >= 70)
@@ -280,12 +227,15 @@ int main(void)
 			else
 				beeper_start(rot_value);
 			break;
+		case EV_TICK:
+			//beeper_start(BEEP_SINGLE);
+			break;
 		}
-		if (ow_done()) {
-		sprintf(str, "%d   ", rot_value);
+		//if (ow_done()) {
+		sprintf(str, "%03d", rot_value);
 		lcd_xy(0, 0);
 		lcd_puts(str);
-		}
+		//}
 	}
 }
 
@@ -329,6 +279,7 @@ void SetupHardware(void)
 	TCCR1B = (1 << WGM12) | (4 << CS10);
 
 	ow_init();
+	key_init();
 
 	lcd_init();
 	lcd_xy(0, 0);
@@ -359,9 +310,7 @@ void EVENT_USB_Device_Disconnect(void)
 /** Event handler for the library USB Configuration Changed event. */
 void EVENT_USB_Device_ConfigurationChanged(void)
 {
-	bool ConfigSuccess = true;
-
-	ConfigSuccess &= CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
+	CDC_Device_ConfigureEndpoints(&VirtualSerial_CDC_Interface);
 }
 
 /** Event handler for the library USB Control Request reception event. */

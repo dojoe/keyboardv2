@@ -1,7 +1,7 @@
 #ifndef MC_EEPROM_H_
 #define MC_EEPROM_H_
 
-typedef void (*eep_callback)(int success);
+typedef void (*eep_callback)(uint8_t success);
 
 enum eep_prot_e {
 	EEP_PROT_NONE          = 0x0,

@@ -4,6 +4,7 @@
 
 #include "hw.h"
 #include "panel.h"
+#include "common.h"
 
 struct shiftregs shiftregs = {
 	0, 1, 0, 0, 0, 0
@@ -53,36 +54,8 @@ void shiftreg_update(void)
 
 uint8_t inputs_prev = 0, inputs_debounced = 0, inputs_debounced_prev = 0;
 
-#define EVENT_QUEUE_SIZE 8
-
-uint8_t event_queue[EVENT_QUEUE_SIZE];
-volatile uint8_t event_queue_head = 0, event_queue_tail = 0;
-
 #define IN_MASKB (IN_ROTA | IN_ROTB | IN_PUSH)
 #define IN_MASKE IN_SMAUL
-
-static inline uint8_t event_queue_full(void)
-{
-	return ((event_queue_head - event_queue_tail) == EVENT_QUEUE_SIZE);
-}
-
-static inline uint8_t event_queue_empty(void)
-{
-	return (event_queue_head == event_queue_tail);
-}
-
-static inline void push_event(uint8_t event)
-{
-	if (event_queue_full())
-		return; // drop event
-
-	event_queue[(event_queue_head++) & (EVENT_QUEUE_SIZE - 1)] = event;
-}
-
-uint8_t next_input_event(void)
-{
-	return event_queue_empty() ? IN_NONE : event_queue[(event_queue_tail++) & (EVENT_QUEUE_SIZE - 1)];
-}
 
 static void poll_inputs(void)
 {
@@ -104,15 +77,15 @@ static void poll_inputs(void)
 	 * one signal and deriving the direction from the other signal.
 	 */
 	if ((inputs_debounced_prev & IN_ROTA) && !(inputs_debounced & IN_ROTA) && (inputs_debounced_prev & IN_ROTB))
-		push_event(IN_ENCODER_CW);
+		push_event(EV_ENCODER_CW);
 	else if ((inputs_debounced_prev & IN_ROTB) && !(inputs_debounced & IN_ROTB) && (inputs_debounced_prev & IN_ROTA))
-		push_event(IN_ENCODER_CCW);
+		push_event(EV_ENCODER_CCW);
 
 	if ((inputs_debounced_prev & IN_PUSH) && !(inputs_debounced & IN_PUSH))
-		push_event(IN_ENCODER_PUSH);
+		push_event(EV_ENCODER_PUSH);
 
 	if ((inputs_debounced_prev & IN_SMAUL) && !(inputs_debounced & IN_SMAUL))
-		push_event(IN_SMAUL_PUSH);
+		push_event(EV_SMAUL_PUSH);
 
 	inputs_debounced_prev = inputs_debounced;
 }
@@ -201,8 +174,8 @@ enum smaul_led_state {
 #define LCD_LED_UP   42
 #define LCD_LED_DOWN 3
 
-static volatile uint8_t global_ms_timer;
-static volatile uint8_t global_qs_timer;
+volatile uint8_t global_ms_timer;
+volatile uint8_t global_qs_timer;
 
 static uint8_t lcd_led_brightness = LCD_LED_DIM;
 static uint8_t smaul_led_osc = 0;
@@ -343,5 +316,7 @@ ISR(TIMER3_OVF_vect)
 	if (!global_ms_timer) {
 		global_qs_timer++;
 		keyleds_update();
+		if ((global_qs_timer & 3) == 0)
+			push_event(EV_TICK);
 	}
 }

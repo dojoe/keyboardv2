@@ -12,8 +12,15 @@ struct bits {
 
 #define SHIFTREG_LATCH SBIT(PORTF, 0)
 
+#define MAX_KEYS 8
+
 #define LCD_LED   OCR1B
 #define SMAUL_LED OCR1A
+
+#define PWR_PORT  PORTD
+#define PWR_PIN   PIND
+#define PWR_DDR   DDRD
+#define PWR_BIT   (1 << PD0)
 
 #define IN_ROTA  (1 << PB7)
 #define IN_ROTB  (1 << PB3)
