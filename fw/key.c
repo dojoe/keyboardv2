@@ -77,11 +77,12 @@ static inline uint8_t wait_done(uint8_t ms)
 
 void key_poll(void)
 {
-	char str[30];
-
-	sprintf(str, " %d %d %03d %03d %d %d %d %d %d %d %d %d", keymgr_state, current_key, global_ms_timer, wait_ms,
-			keys[0].state, keys[1].state, keys[2].state, keys[3].state, keys[4].state, keys[5].state, keys[6].state, keys[7].state);
-	lcd_puts(str);
+	if (0) {
+		char str[30];
+		sprintf(str, " %d %d %03d %03d %d %d %d %d %d %d %d %d", keymgr_state, current_key, global_ms_timer, wait_ms,
+				keys[0].state, keys[1].state, keys[2].state, keys[3].state, keys[4].state, keys[5].state, keys[6].state, keys[7].state);
+		lcd_puts(str);
+	}
 
 	switch (keymgr_state) {
 	case KMS_IDLE:
@@ -145,7 +146,6 @@ void key_poll(void)
 		break;
 
 	case KMS_READ_OK:
-		lcd_puts("yay");
 		if (keys[current_key].state != KS_VALID || memcmp(&key_read_data, &keys[current_key].eep, sizeof(key_read_data))) {
 			if (!key_validate()) {
 				set_key_state(KS_INVALID2);
