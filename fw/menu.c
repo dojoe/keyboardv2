@@ -15,6 +15,27 @@ void menu_reset() {
   menu_timer = 0;
 }
 
+
+/** 
+ * this method is used internally to reset the timer for ending the menu mode.
+ */
+void _resetTimer() {
+  switch(menu_state) {
+    case MENU_STATE_INACTIVE:  menu_timer = 0; break;
+
+    case MENU_STATE_PIZZA1:
+    case MENU_STATE_PIZZA2:
+    case MENU_STATE_PIZZA3:    menu_timer = MENU_TIMEOUT_SECONDS; break;
+
+    case MENU_STATE_SELECT_REPAINT:
+    case MENU_STATE_SELECT_TIME:
+                               menu_timer = MENU_TIMEOUT_SELECT_SECONDS; break;
+  }
+}
+
+/** 
+ * this method is externally called when the 
+ */
 void menu_activate() {
   menu_timer =  MENU_TIMEOUT_SECONDS;
   switch (menu_state) {
@@ -34,6 +55,8 @@ void menu_activate() {
                               menu_state = MENU_STATE_SELECT_REPAINT; 
                               break;
   }
+                              
+  _resetTimer();
 }
 
 static void menu_print(const char* s) {
@@ -65,6 +88,7 @@ void menu_loop() {
 }
 
 void menu_button_down() {
+  _resetTimer();
   switch(menu_state) {
     case MENU_STATE_PIZZA1:		 	 menu_state = MENU_STATE_PIZZA2; break;
     case MENU_STATE_PIZZA2:		   menu_state = MENU_STATE_PIZZA3; break;
@@ -78,6 +102,7 @@ void menu_button_down() {
 }
 
 void menu_button_up() {
+  _resetTimer();
   switch(menu_state) {
     case MENU_STATE_PIZZA1:		   menu_state = MENU_STATE_PIZZA3; break;
     case MENU_STATE_PIZZA2:		   menu_state = MENU_STATE_PIZZA1; break;

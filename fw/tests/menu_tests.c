@@ -198,6 +198,71 @@ TEST menu_goesAway_whenTimeoutOccurs() {
   PASS();
 }
 
+TEST menu_goesAway_whenInTimeSelectionMode() {
+  extern int menu_state, menu_timer;
+  extern void menutimer();
+
+  // fixture:
+  menu_reset();
+  menu_activate();
+  menu_activate();
+  menu_loop();
+
+  // execution:
+  int i;
+  for (i = 0; i < MENU_TIMEOUT_SELECT_SECONDS - 1; i++) {
+    menutimer();
+    ASSERT_EQ(menu_state, MENU_STATE_SELECT_TIME);
+  }
+  menutimer();
+
+  // assertion: should be in inactive mode now. timer should have been called.
+  ASSERT_EQ(menu_state, MENU_STATE_INACTIVE);
+  PASS();
+}
+
+TEST menu_refreshesTimer_whenInputUpIsTriggered() {
+  extern int menu_state, menu_timer;
+  extern void menutimer();
+
+  // fixture: reset and activate the menu
+  menu_reset();
+  menu_activate();
+  menu_loop();
+
+  // execution: perform input
+  int i;
+  for (i = 0; i < 10; i++) {
+    menutimer();
+  }
+  menu_button_down();
+
+  // assertion: menu timer should be reset
+  ASSERT_EQ(menu_timer, MENU_TIMEOUT_SECONDS);
+  PASS();
+}
+
+TEST menu_refreshesTimer_whenInputDownIsTriggered() {
+  extern int menu_state, menu_timer;
+  extern void menutimer();
+
+  // fixture: reset and activate the menu
+  menu_reset();
+  menu_activate();
+  menu_loop();
+
+  // execution: perform input
+  int i;
+  for (i = 0; i < 10; i++) {
+    menutimer();
+  }
+  menu_button_up();
+
+  // assertion: menu timer should be reset
+  ASSERT_EQ(menu_timer, MENU_TIMEOUT_SECONDS);
+  PASS();
+}
+
 
 
 
@@ -232,6 +297,11 @@ SUITE (menu_functionality) {
   RUN_TEST(menu_goesAway_whenTimeoutOccurs);
 
   // timeout -> laenge beendet
+  RUN_TEST(menu_goesAway_whenInTimeSelectionMode);
+
+  // timer refresh -> any input.
+  RUN_TEST(menu_refreshesTimer_whenInputUpIsTriggered);
+  RUN_TEST(menu_refreshesTimer_whenInputDownIsTriggered);
 }
 
 
