@@ -309,6 +309,7 @@ void keyleds_off(void)
  */
 ISR(TIMER3_OVF_vect)
 {
+	sei(); /* Allow other ints, like onewire int, to interrupt this. */
 	poll_inputs();
 	beeper_update();
 	pwmled_update();
