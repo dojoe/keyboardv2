@@ -10,6 +10,7 @@
 #define __STDC_VERSION__ 19901l
 #include <greatest.h>
 
+#include "beeper_mock.h"
 #include "../schluesseltimer.c"
 #include "lcd_drv_mock.h"
 
@@ -79,7 +80,24 @@ TEST schluesseltimer_displaysTime_andUpdatesAfterTimerEvent() {
   schluessel_timer();
   schluesseltimer_displayupdate();
   ASSERT_EQ(strncmp(LCD_CONTENTS, "                 3m        ", 18), 0);
+  PASS();
 }
+
+TEST schluesseltimer_beeps_whenTimerRunsOut() {
+  // fixture: set to idle status to make pizza timer enabled
+  initTimers();
+  schluessel_timer();
+  resetBeeper();
+  setKeyTimeout(KEY_ID_PIZZATIMER_1, 1);
+
+  // assertion + execution: display value, count down and display again.
+  schluessel_timer();
+	ASSERT_EQ(beeper_sound, BEEP_PIZZA1);
+  PASS();
+}
+
+
+
 
 
 
@@ -96,6 +114,9 @@ SUITE (timer_functionality) {
   // if pizza-timer is active.
 	RUN_TEST(schluesseltimer_displaysTime_whenPizzaTimerIsActive);
   RUN_TEST(schluesseltimer_displaysTime_andUpdatesAfterTimerEvent);
+
+  // if a timer runs out
+  RUN_TEST(schluesseltimer_beeps_whenTimerRunsOut);
 	
 }
 

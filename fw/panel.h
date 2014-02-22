@@ -1,12 +1,15 @@
 #ifndef PANEL_H_
 #define PANEL_H_
 
+#ifndef __NO_INCLUDE_AVR
 #include "hw.h"
+#endif // __NO_INCLUDE_AVR
 
 extern struct shiftregs shiftregs;
 void shiftreg_reset(void);
 void shiftreg_update(void);
 
+#ifndef __NO_INCLUDE_AVR
 static inline uint8_t shiftreg_done(void)
 {
 	extern uint8_t shiftreg_state;
@@ -22,6 +25,7 @@ static inline void set_smaul_led(uint8_t value)
 {
 	SMAUL_LED = 255 - value;
 }
+#endif // __NO_INCLUDE_AVR
 
 enum beep_patterns {
 	BEEP_OFF = 0,

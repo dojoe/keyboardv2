@@ -17,6 +17,19 @@ void initTimers() {
   }
 }
 
+
+static void menu_start_beeping(int slot) {
+  if (slot == MAX_KEYS + 0) {
+    beeper_start(BEEP_PIZZA1);
+  } else if (slot == MAX_KEYS + 1) {
+    beeper_start(BEEP_PIZZA2);
+  } else if (slot == MAX_KEYS + 2) {
+    beeper_start(BEEP_PIZZA3);
+  } 
+
+}
+
+
 void schluessel_timer() {
   triggerDisplayUpdate = 1;
 
@@ -24,6 +37,9 @@ void schluessel_timer() {
   for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
     if (keyTimers[i] > 0) {
       keyTimers[i] --;
+      if (keyTimers[i] == 0) {
+        menu_start_beeping(i);
+      }
     }
   }
 
