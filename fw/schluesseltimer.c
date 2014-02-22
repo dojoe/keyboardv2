@@ -47,10 +47,10 @@ static void print_time(int timeInSeconds) {
 
   if (timeInSeconds < 60) {
     // print <timeInSeconds>s
-    sprintf(buffer, "%2dm ", timeInSeconds);
+    sprintf(buffer, "%2ds ", timeInSeconds);
   } else {
     // print <timeInSeconds / 60>m
-    sprintf(buffer, "%2ds ", timeInSeconds / 60);
+    sprintf(buffer, "%2dm ", timeInSeconds / 60);
   }
 
   lcd_puts(buffer);
