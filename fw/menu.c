@@ -3,6 +3,7 @@
 #include "hw.h"
 #include "lcd_drv.h"
 #include "menu-defs.h"
+#include "common.h"
 
 
 int menu_state = 0;
@@ -54,6 +55,11 @@ void menu_activate() {
                               selected_key = KEY_ID_PIZZATIMER_3; 
                               menu_state = MENU_STATE_SELECT_REPAINT; 
                               break;
+
+    case MENU_STATE_SELECT_REPAINT:
+    case MENU_STATE_SELECT_TIME:
+                              menu_state = MENU_STATE_APPLY_TIMER;
+                              break;
   }
                               
   _resetTimer();
@@ -71,6 +77,10 @@ void menu_loop() {
   char buffer[64]; 
 
   if (menu_state == MENU_STATE_INACTIVE) {
+    return;
+  } else if (menu_state == MENU_STATE_APPLY_TIMER) { 
+    setKeyTimeout(selected_key, selected_time);
+    menu_state = MENU_STATE_INACTIVE;
     return;
   }
 
@@ -118,8 +128,11 @@ void menu_button_up() {
 void menutimer() {
   menu_timer--;
   if (menu_timer < 1) {
-    menu_state = MENU_STATE_INACTIVE;
-    menu_timer = 0;
+    if (menu_state == MENU_STATE_SELECT_TIME || menu_state == MENU_STATE_SELECT_REPAINT) {
+      menu_state = MENU_STATE_APPLY_TIMER;
+    } else {
+      menu_state = MENU_STATE_INACTIVE;
+    }
   }
 }
 
@@ -127,19 +140,41 @@ void menutimer() {
 #ifndef __NO_INCLUDE_AVR
 
 int call_menu() {
-  menu_reset();
-  menu_activate();
+  extern void initTimers();
+	extern void schluessel_timer();
+	extern void schluesseltimer_displayupdat();
+  extern void schluesseltimer_displayupdate();
+
+  initTimers();
 
   for (;;) {
-    menu_loop();
 
-    switch(next_input_event()) {
-      case IN_ENCODER_CCW:   menu_button_up(); break;
-      case IN_ENCODER_CW:  menu_button_down(); break;
-      case IN_ENCODER_PUSH: menu_activate(); break;
-      case IN_SMAUL_PUSH:   return;
-    }
-  }
+		for (;;) {
+			schluesseltimer_displayupdate();
+			switch(get_event()) {
+				case EV_ENCODER_PUSH: goto startmenu;
+				case EV_TICK:			    schluessel_timer(); 
+                              break;
+			}
+		}
+
+startmenu:
+	  menu_reset();
+	  menu_activate();
+	
+	  for (;menu_state != MENU_STATE_INACTIVE;) {
+	    menu_loop();
+	
+	    switch(get_event()) {
+	      case EV_ENCODER_CCW:     menu_button_up(); break;
+	      case EV_ENCODER_CW:      menu_button_down(); break;
+	      case EV_ENCODER_PUSH:    menu_activate(); break;
+	      case EV_TICK:            menutimer(); break;
+	      case EV_SMAUL_PUSH:      break;
+	    }
+	  }
+
+	}
 }
 
 #endif // __NO_INCLUDE_AVR

@@ -99,6 +99,8 @@ int main(void)
 		case EV_SMAUL_PUSH:
 			if (rot_value == 254)
 				call_bootloader();
+			else if (rot_value == 250) 
+        call_menu();
 			else if (rot_value >= 70)
 				keyled_blink(rot_value - 70);
 			else if (rot_value == 69)
@@ -113,8 +115,6 @@ int main(void)
 				smaul_off();
 			else if (rot_value > 10)
 				set_lcd_backlight(rot_value == 11);
-      else if (rot_value == 250) 
-        call_menu();
 			else
 				beeper_start(rot_value);
 			break;

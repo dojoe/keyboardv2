@@ -10,9 +10,14 @@
 #define __STDC_VERSION__ 19901l
 #include <greatest.h>
 
-#include "../menu.c"
+
 #include "lcd_drv_mock.h"
+#include "timer_mock.h"
+
+#include "../menu.c"
 #include "../menu-defs.h"
+
+
 
 
 TEST menu_doesNotChangeDisplayContents_whenNotActivated() {
@@ -95,7 +100,7 @@ TEST menu_selectsPizzaTimerN_whenButtonIsPressedInMenu(int timesButtonDownBefore
   PASS();
 }
 
-TEST menu_addsOneSecond_whenButtonUpIsPressed() {
+TEST menu_addsOneMinute_whenButtonUpIsPressed() {
   extern int menu_state, selected_key, selected_time;
 
   // fixture: go to the pizzatimer 1 - time selection.
@@ -114,7 +119,7 @@ TEST menu_addsOneSecond_whenButtonUpIsPressed() {
   ASSERT_EQ(strcmp(LCD_CONTENTS, "Pizzatimer 1    06:00"), 0);
 }
 
-TEST menu_subtractsOneSecond_whenButtonDownIsPressed() {
+TEST menu_subtractsOneMinute_whenButtonDownIsPressed() {
   extern int menu_state, selected_key, selected_time;
 
   // fixture: go to the pizzatimer 1 - time selection.
@@ -217,7 +222,12 @@ TEST menu_goesAway_whenInTimeSelectionMode() {
   menutimer();
 
   // assertion: should be in inactive mode now. timer should have been called.
+  ASSERT_EQ(menu_state, MENU_STATE_APPLY_TIMER);
+  menu_loop();
   ASSERT_EQ(menu_state, MENU_STATE_INACTIVE);
+  ASSERT_EQ(keyTimeout_selectedKey, KEY_ID_PIZZATIMER_1);
+	ASSERT_EQ(keyTimeout_time, 300);
+
   PASS();
 }
 
@@ -263,6 +273,23 @@ TEST menu_refreshesTimer_whenInputDownIsTriggered() {
   PASS();
 }
 
+TEST menu_setsTimer_whenButtonIsPressedInTimeSelection() {
+  extern int menu_state;
+
+  // fixture: reset and activate menu, go to time selection
+  menu_reset();
+  menu_activate();
+  menu_activate();
+  
+  // execute: select time.
+  menu_activate();
+
+  // should have gone to state menu inactive
+  ASSERT_EQ(menu_state, MENU_STATE_APPLY_TIMER);
+  menu_loop();
+  ASSERT_EQ(menu_state, MENU_STATE_INACTIVE);
+}
+
 
 
 
@@ -288,8 +315,8 @@ SUITE (menu_functionality) {
   RUN_TESTp(menu_selectsPizzaTimerN_whenButtonIsPressedInMenu, 2, MENU_STATE_PIZZA3, KEY_ID_PIZZATIMER_3);
 
   // zeit einstellen fuer irgendwas
-  RUN_TEST(menu_addsOneSecond_whenButtonUpIsPressed);  
-  RUN_TEST(menu_subtractsOneSecond_whenButtonDownIsPressed);  
+  RUN_TEST(menu_addsOneMinute_whenButtonUpIsPressed);  
+  RUN_TEST(menu_subtractsOneMinute_whenButtonDownIsPressed);  
   RUN_TEST(menu_capsSeconds_whenButtonIsUpAndTimeIs99Minutes);
   RUN_TEST(menu_capsSeconds_whenButtonIsDownAndTimeIs0Minutes);
 
@@ -302,6 +329,7 @@ SUITE (menu_functionality) {
   // timer refresh -> any input.
   RUN_TEST(menu_refreshesTimer_whenInputUpIsTriggered);
   RUN_TEST(menu_refreshesTimer_whenInputDownIsTriggered);
+  RUN_TEST(menu_setsTimer_whenButtonIsPressedInTimeSelection);
 }
 
 

@@ -50,5 +50,6 @@ struct shiftregs {
 #define KEY_ID_PIZZATIMER_1												(KEY_ID_PIZZATIMER_OFFSET+0)
 #define KEY_ID_PIZZATIMER_2												(KEY_ID_PIZZATIMER_OFFSET+1)
 #define KEY_ID_PIZZATIMER_3												(KEY_ID_PIZZATIMER_OFFSET+2)
+#define NUM_PIZZA_TIMERS													3
 
 #endif /* HW_H_ */
