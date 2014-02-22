@@ -47,6 +47,8 @@
 #include <LUFA/Drivers/USB/USB.h>
 
 #include "common.h"
+#include "usb.h"
+#include "cmd.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -83,13 +85,8 @@ USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
  */
 static FILE USBSerialStream;
 
-static char str[100];
-static uint8_t strptr = 0;
-
-void handle_command(void)
-{
-	printf("%s\n", str);
-}
+static char serial_input[100];
+static uint8_t input_ptr = 0;
 
 void usb_init(void)
 {
@@ -107,11 +104,11 @@ void usb_poll(void)
 			break;
 
 		if (rc == '\n') {
-			str[strptr] = 0;
-			handle_command();
-			strptr = 0;
-		} else if (strptr < sizeof(str) - 1) {
-			str[strptr++] = rc;
+			serial_input[input_ptr] = 0;
+			handle_command(serial_input);
+			input_ptr = 0;
+		} else if ((rc != '\r') && (input_ptr < sizeof(serial_input) - 1)) {
+			serial_input[input_ptr++] = rc;
 		}
 	}
 

@@ -25,7 +25,7 @@ uint8_t wait_ms;
 
 struct key_eeprom_data key_read_data;
 
-struct key_info keys[MAX_KEYS];
+struct key_socket keys[MAX_KEYS];
 
 void key_init(void)
 {
@@ -141,14 +141,14 @@ void key_poll(void)
 		break;
 
 	case KMS_READ_ERR:
-		set_key_state(KS_INVALID1);
+		set_key_state(KS_READ_ERROR);
 		key_disable_and_next();
 		break;
 
 	case KMS_READ_OK:
 		if (keys[current_key].state != KS_VALID || memcmp(&key_read_data, &keys[current_key].eep, sizeof(key_read_data))) {
 			if (!key_validate()) {
-				set_key_state(KS_INVALID2);
+				set_key_state(KS_CRC_ERROR);
 			} else {
 				memcpy(&keys[current_key].eep, &key_read_data, sizeof(key_read_data));
 				set_key_state(KS_VALID);

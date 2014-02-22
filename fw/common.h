@@ -16,6 +16,12 @@ enum events {
 
 #define EVENT_QUEUE_SIZE 8
 
+#define NAME_LENGTH 16
+
+typedef char name_t[NAME_LENGTH + 1];
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+
 void push_event(uint8_t event);
 uint8_t get_event(void);
 

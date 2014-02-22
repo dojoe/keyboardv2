@@ -13,6 +13,7 @@
 #include "lcd_drv.h"
 #include "panel.h"
 #include "usb.h"
+#include "config.h"
 
 static void SetupHardware(void)
 {
@@ -54,6 +55,7 @@ static void SetupHardware(void)
 
 	ow_init();
 	key_init();
+	load_config();
 
 	lcd_init();
 	lcd_xy(0, 0);

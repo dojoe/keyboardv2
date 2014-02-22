@@ -35,8 +35,10 @@ void lcd_command( uint8_t d )
     case 0 ... 3:                       // on longer commands
       _delay_us( LCD_TIME_CLR );
       d = LCD_LINE1;
+      // no break
     case 0x80 ... 0xFF:                 // set position
       lcd_pos = d;
+      break;
   }
 }
 
