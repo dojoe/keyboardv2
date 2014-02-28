@@ -25,8 +25,9 @@ static void menu_start_beeping(int slot) {
     beeper_start(BEEP_PIZZA2);
   } else if (slot == MAX_KEYS + 2) {
     beeper_start(BEEP_PIZZA3);
-  } 
-
+  } else {
+    beeper_start(BEEP_KEYMISSING);
+  }
 }
 
 
@@ -48,7 +49,10 @@ void schluessel_timer() {
 void setKeyTimeout(int key, int time) { 
   if (key >= KEY_ID_PIZZATIMER_OFFSET) {
     keyTimers[MAX_KEYS+(key-KEY_ID_PIZZATIMER_OFFSET)] = time;
+    return;
   } 
+
+  // TODO: find out which key is missing and 
 }
 
 

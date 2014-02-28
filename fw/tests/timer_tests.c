@@ -83,16 +83,16 @@ TEST schluesseltimer_displaysTime_andUpdatesAfterTimerEvent() {
   PASS();
 }
 
-TEST schluesseltimer_beeps_whenTimerRunsOut() {
+TEST schluesseltimer_beeps_whenTimerRunsOut(int key, int sound) {
   // fixture: set to idle status to make pizza timer enabled
   initTimers();
   schluessel_timer();
   resetBeeper();
-  setKeyTimeout(KEY_ID_PIZZATIMER_1, 1);
+  setKeyTimeout(key, 1);
 
   // assertion + execution: display value, count down and display again.
   schluessel_timer();
-	ASSERT_EQ(beeper_sound, BEEP_PIZZA1);
+	ASSERT_EQ(beeper_sound, sound);
   PASS();
 }
 
@@ -116,8 +116,10 @@ SUITE (timer_functionality) {
   RUN_TEST(schluesseltimer_displaysTime_andUpdatesAfterTimerEvent);
 
   // if a timer runs out
-  RUN_TEST(schluesseltimer_beeps_whenTimerRunsOut);
-	
+  RUN_TESTp(schluesseltimer_beeps_whenTimerRunsOut, KEY_ID_PIZZATIMER_1, BEEP_PIZZA1);
+  RUN_TESTp(schluesseltimer_beeps_whenTimerRunsOut, KEY_ID_PIZZATIMER_2, BEEP_PIZZA2);
+  RUN_TESTp(schluesseltimer_beeps_whenTimerRunsOut, KEY_ID_PIZZATIMER_3, BEEP_PIZZA3);
+  RUN_TESTp(schluesseltimer_beeps_whenTimerRunsOut, 1, BEEP_KEYMISSING);	
 }
 
 
