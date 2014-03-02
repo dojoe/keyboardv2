@@ -147,6 +147,12 @@ void eep_erase(uint8_t erase_value, eep_callback cb)
 	eep_enable_write();
 }
 
+void eep_abort(void)
+{
+	eep_state = IDLE;
+	ow_disconnect();
+}
+
 void eep_poll(void)
 {
 	enum eep_state_e eep_state_copy = eep_state;

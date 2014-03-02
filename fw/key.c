@@ -13,17 +13,20 @@ enum keymgr_state {
 	KMS_SELECT   = 1,
 	KMS_DETECT   = 2,
 	KMS_ENABLE   = 3,
-	KMS_READ     = 4,
-	KMS_READ_OK  = 5,
-	KMS_READ_ERR = 6,
+	KMS_XFER     = 4,
+	KMS_XFER_OK  = 5,
+	KMS_XFER_ERR = 6,
 	KMS_DISABLE  = 7,
 };
 
-uint8_t current_key = 0;
-uint8_t keymgr_state = KMS_IDLE;
-uint8_t wait_ms;
+static uint8_t current_key = 0;
+static uint8_t keymgr_state = KMS_IDLE;
+static uint8_t wait_ms;
 
-struct key_eeprom_data key_read_data;
+static uint8_t programming = 0;
+static key_program_cb program_cb;
+
+struct key_eeprom_data key_xfer_data;
 
 struct key_socket keys[MAX_KEYS];
 
@@ -32,16 +35,22 @@ void key_init(void)
 	memset(&keys, 0, sizeof(keys));
 }
 
-static void key_read_cb(uint8_t success)
+static void key_xfer_cb(uint8_t success)
 {
 	ow_disconnect();
-	keymgr_state = success ? KMS_READ_OK : KMS_READ_ERR;
+	keymgr_state = success ? KMS_XFER_OK : KMS_XFER_ERR;
+}
+
+static void key_disable(void)
+{
+	PWR_PORT &= ~PWR_BIT;
+	PWR_DDR  |=  PWR_BIT;
 }
 
 static void key_disable_and_next(void)
 {
-	PWR_PORT &= ~PWR_BIT;
-	PWR_DDR  |=  PWR_BIT;
+	key_disable();
+	programming = 0;
 	wait_ms = global_ms_timer;
 	keymgr_state = KMS_DISABLE;
 }
@@ -54,16 +63,35 @@ static void set_key_state(uint8_t state)
 	}
 }
 
-static uint8_t key_validate(void)
+static uint16_t calc_key_crc(void)
 {
 	uint16_t crc = 0xFFFF;
 	uint8_t i;
-	uint8_t *data = (uint8_t *)&key_read_data;
 
-	for (i = 0; i < sizeof(key_read_data) - sizeof(crc); i++)
+	uint8_t *data = (uint8_t *)&key_xfer_data;
+
+	for (i = 0; i < sizeof(key_xfer_data) - sizeof(crc); i++)
 		crc = _crc16_update(crc, data[i]);
 
-	return crc == key_read_data.crc16;
+	return crc;
+}
+
+static uint8_t key_validate(void)
+{
+	return calc_key_crc() == key_xfer_data.crc16;
+}
+
+void key_program(uint8_t slot, struct key_eeprom_data *data, key_program_cb cb)
+{
+	/* Abort whatever the key manager was just in the process of doing */
+	eep_abort();
+	key_disable();
+	keymgr_state = KMS_IDLE;
+	current_key = slot;
+	program_cb = cb;
+	programming = 1;
+	key_xfer_data = *data;
+	key_xfer_data.crc16 = calc_key_crc();
 }
 
 #include <stdio.h>
@@ -116,7 +144,11 @@ void key_poll(void)
 			break;
 
 		if (!(PWR_PIN & PWR_BIT)) {
-			set_key_state(KS_EMPTY);
+			if (programming)
+				program_cb(KS_EMPTY);
+			else
+				set_key_state(KS_EMPTY);
+
 			key_disable_and_next();
 			break;
 		}
@@ -132,25 +164,38 @@ void key_poll(void)
 		if (wait_done(2))
 			break;
 
-		eep_read(0, sizeof(key_read_data), &key_read_data, key_read_cb);
-		keymgr_state = KMS_READ;
+		if (programming)
+			eep_write(0, sizeof(key_xfer_data), &key_xfer_data, key_xfer_cb);
+		else
+			eep_read(0, sizeof(key_xfer_data), &key_xfer_data, key_xfer_cb);
+		keymgr_state = KMS_XFER;
 		break;
 
-	case KMS_READ:
+	case KMS_XFER:
 		/* State will be changed by callback */
 		break;
 
-	case KMS_READ_ERR:
-		set_key_state(KS_READ_ERROR);
+	case KMS_XFER_ERR:
+		if (programming)
+			program_cb(KS_READ_ERROR);
+		else
+			set_key_state(KS_READ_ERROR);
+
 		key_disable_and_next();
 		break;
 
-	case KMS_READ_OK:
-		if (keys[current_key].state != KS_VALID || memcmp(&key_read_data, &keys[current_key].eep, sizeof(key_read_data))) {
+	case KMS_XFER_OK:
+		if (programming) {
+			program_cb(KS_VALID);
+			key_disable_and_next();
+			break;
+		}
+
+		if (keys[current_key].state != KS_VALID || memcmp(&key_xfer_data, &keys[current_key].eep, sizeof(key_xfer_data))) {
 			if (!key_validate()) {
 				set_key_state(KS_CRC_ERROR);
 			} else {
-				memcpy(&keys[current_key].eep, &key_read_data, sizeof(key_read_data));
+				memcpy(&keys[current_key].eep, &key_xfer_data, sizeof(key_xfer_data));
 				set_key_state(KS_VALID);
 			}
 		}

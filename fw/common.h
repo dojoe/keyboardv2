@@ -20,6 +20,9 @@ enum events {
 
 typedef char name_t[NAME_LENGTH + 1];
 
+#define __STRINGIFY2__(x) #x
+#define __STRINGIFY__(x) __STRINGIFY2__(x)
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 
 void push_event(uint8_t event);

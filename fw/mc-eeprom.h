@@ -20,6 +20,11 @@ void eep_write(uint16_t addr, uint16_t size, void *buf, eep_callback cb);
 void eep_erase(uint8_t erase_value, eep_callback cb);
 void eep_protect(uint8_t protbits, eep_callback cb);
 
+/**
+ * Abort any outstanding EEPROM work and stop onewire transfers
+ */
+void eep_abort(void);
+
 void eep_poll(void);
 
 #endif /* MC_EEPROM_H_ */

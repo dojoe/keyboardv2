@@ -41,7 +41,10 @@ struct key_socket {
 
 extern struct key_socket keys[MAX_KEYS];
 
+typedef void (*key_program_cb)(uint8_t status);
+
 void key_init(void);
 void key_poll(void);
+void key_program(uint8_t slot, struct key_eeprom_data *data, key_program_cb cb);
 
 #endif /* KEY_H_ */

@@ -9,6 +9,8 @@
 #include "key.h"
 #include "config.h"
 
+static uint8_t busy = 0;
+
 static void help(char *argv[])
 {
 	printf_P(PSTR("\n\
@@ -31,8 +33,8 @@ clear_keys\n\
 capture_keys\n\
    Clear list of expected keys and replace with all currently plugged keys\n\
 program_key <position> <ID> <dfl timeout> <max timeout> <flags> <Name...>\n\
-   Program key in position <position>, indexed 1..8 from left to right.\n\
-   Implicitly adds the key to the list of expected keys.\n\
+   Program key in position <position>, indexed 0..7 from left to right.\n\
+   This does not add the key to the list of expected keys!\n\
    dfl timeout - default timeout when key is removed, in minutes (1..255)\n\
                  Specify 0 here to disable timeout.\n\
    max timeout - maximum timeout that can be set, in minutes (1..255)\n\
@@ -57,15 +59,15 @@ static void show_keys(char *argv[])
 {
 	uint8_t i;
 	for (i = 0; i < MAX_KEYS; i++) {
-		printf("Position %d: ", i + 1);
+		printf_P(PSTR("Position %d: "), i + 1);
 		if (keys[i].state == KS_EMPTY) {
-			printf("No key plugged\n");
+			printf_P(PSTR("No key plugged\n"));
 		} else if (keys[i].state == KS_READ_ERROR) {
-			printf("Read error\n");
+			printf_P(PSTR("Read error\n"));
 		} else if (keys[i].state == KS_CRC_ERROR) {
-			printf("Bad checksum\n");
+			printf_P(PSTR("Bad checksum\n"));
 		} else {
-			printf("ID %d (%s), timeout %d (max %d)%s%s\n",
+			printf_P(PSTR("ID %d (%s), timeout %d (max %d)%s%s\n"),
 					keys[i].eep.key.id, keys[i].eep.key.name,
 					keys[i].eep.key.dfl_timeout, keys[i].eep.key.max_timeout,
 					(keys[i].eep.key.flags & KF_BEEP) ? ", beep when gone" : "",
@@ -86,15 +88,37 @@ static uint8_t parse_key_args(char *argv[], uint8_t argi, struct key_info *data)
 	return (data->id != 0);
 }
 
+static void program_key_cb(uint8_t status)
+{
+	busy = 0;
+
+	switch (status) {
+	case KS_VALID:
+		printf_P(PSTR("Programming successful\n"));
+		break;
+	case KS_EMPTY:
+		printf_P(PSTR("Could not program: No key plugged\n"));
+		break;
+	case KS_READ_ERROR:
+		printf_P(PSTR("Could not program: Transmission failed\n"));
+		break;
+	}
+}
+
 static void program_key(char *argv[])
 {
 	struct key_eeprom_data data;
 	uint8_t slot = atoi(argv[1]);
 
 	memset(&data, 0, sizeof(data));
-	if (!parse_key_args(argv, 2, &data.key))
+	if (!parse_key_args(argv, 2, &data.key)) {
+		printf_P(PSTR("Bad key data specified\n"));
 		return;
+	}
+
 	data.kb = config.kb;
+	busy = 1;
+	key_program(slot, &data, program_key_cb);
 }
 
 static void set_keyboard(char *argv[])
@@ -110,20 +134,20 @@ static void show_config(char *argv[])
 	int i;
 	struct key_info *k;
 
-	printf("# Keyboard v2 config dump\n"
+	printf_P(PSTR("# Keyboard v2 config dump\n"
 		   "set_keyboard %d %s\n"
-		   "clear_keys\n",
+		   "clear_keys\n"),
 		   config.kb.id, config.kb.name);
 
 	for (i = 0, k = config.keys; i < MAX_KEYS; i++, k++) {
 		if (!k->id)
 			continue;
-		printf("add_key %d %d %d %s%s %s\n",
+		printf_P(PSTR("add_key %d %d %d %s%s %s\n"),
 			   k->id, k->dfl_timeout, k->max_timeout, (k->flags & KF_BEEP) ? "B" : "",
 			   (k->flags & KF_ROTLIGHT) ? "R" : "", k->name);
 	}
 
-	printf("# END Keyboard v2 config dump");
+	printf_P(PSTR("# END Keyboard v2 config dump"));
 }
 
 #define CMD_MAX 12+1
@@ -158,6 +182,10 @@ void handle_command(char *cmd)
 	handler_t handler;
 
 	printf("%s\n", cmd);
+
+	if (busy) {
+		printf_P(PSTR("Busy, try again.\n"));
+	}
 
 	/* Strip comments */
 	tmp = strchr(cmd, '#');
@@ -194,5 +222,5 @@ void handle_command(char *cmd)
 	}
 
 error:
-	printf("What?\n");
+	printf_P(PSTR("What?\n"));
 }
