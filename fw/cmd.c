@@ -67,11 +67,11 @@ static void show_keys(char *argv[])
 		} else if (keys[i].state == KS_CRC_ERROR) {
 			printf_P(PSTR("Bad checksum\n"));
 		} else {
-			printf_P(PSTR("ID %d (%s), timeout %d (max %d)%s%s\n"),
+			printf_P(PSTR("ID %d (%s), timeout %d (max %d)%S%S\n"),
 					keys[i].eep.key.id, keys[i].eep.key.name,
 					keys[i].eep.key.dfl_timeout, keys[i].eep.key.max_timeout,
-					(keys[i].eep.key.flags & KF_BEEP) ? ", beep when gone" : "",
-					(keys[i].eep.key.flags & KF_ROTLIGHT) ? ", rotate light when gone" : "");
+					(keys[i].eep.key.flags & KF_BEEP) ? PSTR(", beep when gone") : PSTR(""),
+					(keys[i].eep.key.flags & KF_ROTLIGHT) ? PSTR(", rotate light when gone") : PSTR(""));
 		}
 	}
 }

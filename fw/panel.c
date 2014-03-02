@@ -1,6 +1,7 @@
 #include <inttypes.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 
 #include "hw.h"
 #include "panel.h"
@@ -201,7 +202,7 @@ int main(void)
 }
 #endif
 
-static const uint8_t gamma[64] = {
+static const PROGMEM uint8_t gamma[64] = {
 		0, 0, 0, 0, 1, 1, 1, 2, 3, 4, 4, 5, 7, 8, 9, 11, 13, 14, 16, 18, 20, 23, 25, 28, 31, 33, 36, 40, 43, 46, 50, 54, 57, 61,
 		66, 70, 74, 79, 84, 89, 94, 99, 105, 110, 116, 122, 128, 134, 140, 147, 153, 160, 167, 174, 182, 189, 197, 205, 213, 221,
 		229, 238, 246, 255,
@@ -244,7 +245,8 @@ static void pwmled_update(void)
 			set_smaul_led((smaul_led_osc & 128) ? 255 : 0);
 		} else {
 			uint8_t brightness = (smaul_led_osc >> 1) & 63;
-			set_smaul_led((smaul_led_osc & 128) ? gamma[brightness] : gamma[63 - brightness]);
+			set_smaul_led((smaul_led_osc & 128) ? pgm_read_byte(gamma + brightness) :
+					pgm_read_byte(gamma + 63 - brightness));
 		}
 	}
 }
