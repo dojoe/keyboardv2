@@ -25,6 +25,7 @@ LD_FLAGS     =
 
 # Default target
 all:
+	cp $(TARGET).eep $(TARGET).eep.hex
 
 # Include LUFA build script makefiles
 include $(LUFA_PATH)/Build/lufa_core.mk
