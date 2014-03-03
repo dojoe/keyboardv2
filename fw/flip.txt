@@ -8,9 +8,9 @@ blankcheck
 loadbuffer "keyboardv2.hex"
 program
 verify
-memory eeprom
-loadbuffer "keyboardv2.eep.hex"
-program
-verify
+#memory eeprom
+#loadbuffer "keyboardv2.eep.hex"
+#program
+#verify
 #serialize 0x6ffe 0x1000 number 1
 start reset 0

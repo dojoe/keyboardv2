@@ -33,7 +33,7 @@ clear_keys\n\
 capture_keys\n\
    Clear list of expected keys and replace with all currently plugged keys\n\
 program_key <position> <ID> <dfl timeout> <max timeout> <flags> <Name...>\n\
-   Program key in position <position>, indexed 0..7 from left to right.\n\
+   Program key in position <position>, indexed 1.." __STRINGIFY__(MAX_KEYS) " from left to right.\n\
    This does not add the key to the list of expected keys!\n\
    dfl timeout - default timeout when key is removed, in minutes (1..255)\n\
                  Specify 0 here to disable timeout.\n\
@@ -48,6 +48,18 @@ Common parameter types:\n\
    ID   - decimal 1-255, zero is reserved\n\
    Name - ASCII, max 16 chars, may contain spaces\n\
           No quotes necessary, will just take rest of line\n"));
+}
+
+static void ok(void)
+{
+	printf_P(PSTR("OK\n"));
+}
+
+static uint8_t check_kb_setup(void)
+{
+	if (!config.kb.id)
+		printf_P(PSTR("Keyboard ID not set. Use set_keyboard first.\n"));
+	return config.kb.id;
 }
 
 static void boot(char *argv[])
@@ -67,11 +79,16 @@ static void show_keys(char *argv[])
 		} else if (keys[i].state == KS_CRC_ERROR) {
 			printf_P(PSTR("Bad checksum\n"));
 		} else {
-			printf_P(PSTR("ID %d (%s), timeout %d (max %d)%S%S\n"),
+			printf_P(PSTR("ID %d (%s), timeout %d (max %d)%S%S"),
 					keys[i].eep.key.id, keys[i].eep.key.name,
 					keys[i].eep.key.dfl_timeout, keys[i].eep.key.max_timeout,
 					(keys[i].eep.key.flags & KF_BEEP) ? PSTR(", beep when gone") : PSTR(""),
 					(keys[i].eep.key.flags & KF_ROTLIGHT) ? PSTR(", rotate light when gone") : PSTR(""));
+			if (keys[i].eep.kb.id == config.kb.id)
+				printf_P(PSTR("\n"));
+			else
+				printf_P(PSTR(", belongs to keyboard ID %d (%s)\n"),
+						keys[i].eep.kb.id, keys[i].eep.kb.name);
 		}
 	}
 }
@@ -94,7 +111,7 @@ static void program_key_cb(uint8_t status)
 
 	switch (status) {
 	case KS_VALID:
-		printf_P(PSTR("Programming successful\n"));
+		ok();
 		break;
 	case KS_EMPTY:
 		printf_P(PSTR("Could not program: No key plugged\n"));
@@ -110,6 +127,14 @@ static void program_key(char *argv[])
 	struct key_eeprom_data data;
 	uint8_t slot = atoi(argv[1]);
 
+	if (!check_kb_setup())
+		return;
+
+	if (!slot || slot > MAX_KEYS) {
+		printf_P(PSTR("Invalid key position\n"));
+		return;
+	}
+
 	memset(&data, 0, sizeof(data));
 	if (!parse_key_args(argv, 2, &data.key)) {
 		printf_P(PSTR("Bad key data specified\n"));
@@ -118,7 +143,98 @@ static void program_key(char *argv[])
 
 	data.kb = config.kb;
 	busy = 1;
-	key_program(slot, &data, program_key_cb);
+	key_program(slot - 1, &data, program_key_cb);
+
+	/* Success/fail message will come from callback */
+}
+
+static void add_key(char *argv[])
+{
+	struct key_info data;
+	int8_t config_slot;
+
+	memset(&data, 0, sizeof(data));
+	if (!parse_key_args(argv, 1, &data)) {
+		printf_P(PSTR("Bad key data specified\n"));
+		return;
+	}
+
+	config_slot = find_key(data.id);
+	if (config_slot < 0) {
+		config_slot = find_key(0);
+		if (config_slot < 0) {
+			printf_P(PSTR("No free slot in key database, delete another key first\n"));
+			return;
+		}
+	}
+
+	config.keys[config_slot] = data;
+	save_config();
+
+	ok();
+}
+
+static void del_key(char *argv[])
+{
+	uint8_t id = atoi(argv[1]);
+	int8_t config_slot;
+
+	if (!id) {
+		printf_P(PSTR("Invalid key ID\n"));
+		return;
+	}
+
+	config_slot = find_key(id);
+	if (config_slot < 0) {
+		printf_P(PSTR("Key not found in database\n"));
+		return;
+	}
+
+	memset(&config.keys[config_slot], 0, sizeof(*config.keys));
+	save_config();
+
+	ok();
+}
+
+static void clear_keys(char *argv[])
+{
+	memset(config.keys, 0, sizeof(config.keys));
+	save_config();
+	ok();
+}
+
+static void capture_keys(char *argv[])
+{
+	uint8_t slot, i;
+
+	if (!check_kb_setup())
+		return;
+
+	for (slot = 0; slot < MAX_KEYS; slot++) {
+		if (!(
+				(keys[slot].state == KS_EMPTY) ||
+				((keys[slot].state == KS_VALID) && (keys[slot].eep.kb.id == config.kb.id))
+			)) {
+			printf_P(PSTR("Key in position %d is not valid\n"), slot + 1);
+			return;
+		}
+		for (i = 0; i < slot; i++) {
+			if (keys[i].state == KS_VALID && keys[slot].state == KS_VALID &&
+					keys[i].eep.key.id == keys[slot].eep.key.id) {
+				printf_P(PSTR("Duplicate key ID in positions %d and %d\n"), i + 1, slot + 1);
+				return;
+			}
+		}
+	}
+
+	memset(config.keys, 0, sizeof(config.keys));
+	for (slot = 0; slot < MAX_KEYS; slot++) {
+		if (keys[slot].state == KS_VALID)
+			config.keys[slot] = keys[slot].eep.key;
+	}
+	save_config();
+
+	ok();
 }
 
 static void set_keyboard(char *argv[])
@@ -127,12 +243,16 @@ static void set_keyboard(char *argv[])
 	memset(config.kb.name, 0, sizeof(config.kb.name));
 	strncpy(config.kb.name, argv[2], NAME_LENGTH);
 	save_config();
+	ok();
 }
 
 static void show_config(char *argv[])
 {
 	int i;
 	struct key_info *k;
+
+	if (!check_kb_setup())
+		return;
 
 	printf_P(PSTR("# Keyboard v2 config dump\n"
 		   "set_keyboard %d %s\n"
@@ -147,7 +267,7 @@ static void show_config(char *argv[])
 			   (k->flags & KF_ROTLIGHT) ? "R" : "", k->name);
 	}
 
-	printf_P(PSTR("# END Keyboard v2 config dump"));
+	printf_P(PSTR("# END Keyboard v2 config dump\n"));
 }
 
 #define CMD_MAX 12+1
@@ -168,10 +288,10 @@ static const PROGMEM struct cmd_def commands[] = {
 		{ "show_keys",    show_keys, 0 },
 		{ "show_config",  show_config, 0 },
 		{ "set_keyboard", set_keyboard, 2 },
-		{ "add_key",      NULL, 5 },
-		{ "del_key",      NULL, 1 },
-		{ "clear_keys",   NULL, 0 },
-		{ "capture_keys", NULL, 0 },
+		{ "add_key",      add_key, 5 },
+		{ "del_key",      del_key, 1 },
+		{ "clear_keys",   clear_keys, 0 },
+		{ "capture_keys", capture_keys, 0 },
 		{ "program_key",  program_key, 6 },
 };
 
@@ -181,10 +301,9 @@ void handle_command(char *cmd)
 	uint8_t i, j, argc = 0;
 	handler_t handler;
 
-	printf("%s\n", cmd);
-
 	if (busy) {
 		printf_P(PSTR("Busy, try again.\n"));
+		return;
 	}
 
 	/* Strip comments */
@@ -207,10 +326,6 @@ void handle_command(char *cmd)
 			if (!argv[j])
 				goto error;
 		}
-
-		printf("%d\n", argc);
-		for (j = 0; j < argc; j++)
-			printf("%s\n", argv[j]);
 
 		/* Matched command, run handler and return */
 		handler = (handler_t)pgm_read_word(&commands[i].handler);

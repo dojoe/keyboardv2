@@ -14,4 +14,11 @@ extern struct config config;
 void save_config(void);
 void load_config(void);
 
+/**
+ * Search for a key with ID id in the configuration
+ * Return index if found, negative if not found.
+ * You can search for ID 0 to look for empty slots in the config.
+ */
+int8_t find_key(uint8_t id);
+
 #endif /* CONFIG_H_ */
