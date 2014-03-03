@@ -22,10 +22,14 @@ SRC          = main.c common.c Descriptors.c onewire.c mc-eeprom.c key.c lcd_drv
 LUFA_PATH    = LUFA-130901/LUFA
 CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -IConfig/
 LD_FLAGS     =
+OBJDIR       = obj
 
 # Default target
-all:
+all: $(OBJDIR)
 	cp $(TARGET).eep $(TARGET).eep.hex
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
 
 # Include LUFA build script makefiles
 include $(LUFA_PATH)/Build/lufa_core.mk
