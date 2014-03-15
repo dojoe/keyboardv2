@@ -112,6 +112,28 @@ static int isTimerActive() {
   return 0;
 }
 
+/** 
+ * helper to check if a pizza timer is running
+ * @param n pizza timer number, must be between 0 and MAX_KEYS
+ */
+int pizzatimer_running(int n) {
+  if (n < 0 || n >= NUM_PIZZA_TIMERS) {
+    return 0;
+  }
+
+  return keyTimers[MAX_KEYS + n] != -1;
+}
+
+/** 
+ * helper to clear a pizza timer.
+ */
+void pizzatimer_clear(int n) {
+  if (n >= 0 && n < NUM_PIZZA_TIMERS) {
+    keyTimers[MAX_KEYS + n] = -1;
+  }
+}
+
+
 /**  
  * helper to check what time the minimum key has, does not include pizza timers.
  */

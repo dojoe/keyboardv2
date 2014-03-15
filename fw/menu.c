@@ -43,17 +43,32 @@ void menu_activate() {
     // enable the menu;
     case MENU_STATE_INACTIVE: menu_state = MENU_STATE_PIZZA1; 
                               break;
-    case MENU_STATE_PIZZA1:   selected_time = PIZZA_TIMER_DEFAULT_TIME; 
-                              selected_key = KEY_ID_PIZZATIMER_1; 
-                              menu_state = MENU_STATE_SELECT_REPAINT; 
+    case MENU_STATE_PIZZA1:   if (pizzatimer_running(0) != 0) {
+                                pizzatimer_clear(0);
+                                menu_state = MENU_STATE_INACTIVE;
+                              } else { 
+                                selected_time = PIZZA_TIMER_DEFAULT_TIME; 
+                                selected_key = KEY_ID_PIZZATIMER_1; 
+                                menu_state = MENU_STATE_SELECT_REPAINT; 
+                              }
                               break;
-    case MENU_STATE_PIZZA2:   selected_time = PIZZA_TIMER_DEFAULT_TIME; 
-                              selected_key = KEY_ID_PIZZATIMER_2; 
-                              menu_state = MENU_STATE_SELECT_REPAINT; 
+    case MENU_STATE_PIZZA2:   if (pizzatimer_running(1) != 0) {
+                                pizzatimer_clear(1);
+                                menu_state = MENU_STATE_INACTIVE;
+                              } else { 
+                                selected_time = PIZZA_TIMER_DEFAULT_TIME; 
+                                selected_key = KEY_ID_PIZZATIMER_2; 
+                                menu_state = MENU_STATE_SELECT_REPAINT; 
+                              }
                               break;
-    case MENU_STATE_PIZZA3:   selected_time = PIZZA_TIMER_DEFAULT_TIME; 
-                              selected_key = KEY_ID_PIZZATIMER_3; 
-                              menu_state = MENU_STATE_SELECT_REPAINT; 
+    case MENU_STATE_PIZZA3:   if (pizzatimer_running(2) != 0) { 
+                                pizzatimer_clear(2);
+                                menu_state = MENU_STATE_INACTIVE;
+                              } else { 
+                                selected_time = PIZZA_TIMER_DEFAULT_TIME; 
+                                selected_key = KEY_ID_PIZZATIMER_3; 
+                                menu_state = MENU_STATE_SELECT_REPAINT; 
+                              }
                               break;
 
     case MENU_STATE_SELECT_REPAINT:
@@ -85,9 +100,26 @@ void menu_loop() {
   }
 
   switch (menu_state) {
-	  case MENU_STATE_PIZZA1:      menu_print("Pizzatimer 1");	break;
-	  case MENU_STATE_PIZZA2:      menu_print("Pizzatimer 2");	break;
-	  case MENU_STATE_PIZZA3:      menu_print("Pizzatimer 3");	break;
+	  case MENU_STATE_PIZZA1:      if (pizzatimer_running(0) != 0) { 
+                                   menu_print("Pizzatimer 1 Off");
+                                 } else {
+                                   menu_print("Pizzatimer 1");	
+                                 }
+                                 break;
+
+	  case MENU_STATE_PIZZA2:      if (pizzatimer_running(1) != 0) { 
+                                   menu_print("Pizzatimer 2 Off");
+                                 } else {
+                                   menu_print("Pizzatimer 2");
+                                 } 
+                                 break;
+
+	  case MENU_STATE_PIZZA3:      if (pizzatimer_running(2) != 0) { 
+                                   menu_print("Pizzatimer 3 Off");
+                                 } else { 
+                                   menu_print("Pizzatimer 3");
+                                 } 
+                                 break;
 
     case MENU_STATE_SELECT_REPAINT:
                                  sprintf(buffer, "Pizzatimer 1    %02i:%02i", selected_time / 60, selected_time % 60);
