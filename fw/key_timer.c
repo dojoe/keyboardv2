@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <string.h>
 #include "hw.h"
 #include "lcd_drv.h"
 #include "common.h"

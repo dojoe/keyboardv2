@@ -1,8 +1,9 @@
 
 
-#define MENU_TIMEOUT_SECONDS		  30
-#define MENU_TIMEOUT_SELECT_SECONDS	15
-#define PIZZA_TIMER_DEFAULT_TIME 300
+#define LCD_TIMEOUT		                    30
+#define MENU_TIMEOUT_SECONDS		          30
+#define MENU_TIMEOUT_SELECT_SECONDS	      15
+#define PIZZA_TIMER_DEFAULT_TIME         300
 
 
 #define MENU_STATE_INACTIVE				0

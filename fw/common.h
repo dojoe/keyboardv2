@@ -15,7 +15,6 @@ enum events {
 };
 
 #define EVENT_QUEUE_SIZE 8
-
 #define NAME_LENGTH 16
 
 typedef char name_t[NAME_LENGTH + 1];

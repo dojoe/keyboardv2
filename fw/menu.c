@@ -138,7 +138,7 @@ void menu_button_down() {
 
     case MENU_STATE_SELECT_REPAINT:
     case MENU_STATE_SELECT_TIME: menu_state = MENU_STATE_SELECT_REPAINT;
-                                 selected_time = max(60, selected_time-60);
+                                 selected_time = max(60, selected_time+60);
                                  break;
   }
 }
@@ -152,7 +152,7 @@ void menu_button_up() {
 
     case MENU_STATE_SELECT_REPAINT:
     case MENU_STATE_SELECT_TIME: menu_state = MENU_STATE_SELECT_REPAINT;
-                                 selected_time = min(99*60, selected_time+60);
+                                 selected_time = min(99*60, selected_time-60);
                                  break;
   }
 }
@@ -175,7 +175,6 @@ int call_menu() {
   extern void initTimers();
 	extern void key_timer();
   extern void key_smaul();
-	extern void keytimer_displayupdat();
   extern void keytimer_displayupdate();
 
   initTimers();
@@ -185,11 +184,13 @@ int call_menu() {
 		for (;;) {
 			keytimer_displayupdate();
 			switch(get_event()) {
-				case EV_ENCODER_PUSH: goto startmenu;
-				case EV_TICK:			    key_timer(); 
+				case EV_ENCODER_PUSH: lcd_resettimer(); goto startmenu;
+				case EV_TICK:			    lcd_timeout(); key_timer(); 
                               break;
-        case EV_SMAUL_PUSH:   key_smaul();
+        case EV_SMAUL_PUSH:   lcd_resettimer(); key_smaul();
                               break;
+        case EV_ENCODER_CCW:
+        case EV_ENCODER_CW:  lcd_resettimer(); break;
 			}
 		}
 
@@ -201,10 +202,10 @@ startmenu:
 	    menu_loop();
 	
 	    switch(get_event()) {
-	      case EV_ENCODER_CW:      menu_button_up(); break;
-	      case EV_ENCODER_CCW:     menu_button_down(); break;
-	      case EV_ENCODER_PUSH:    menu_activate(); break;
-	      case EV_TICK:            menutimer(); break;
+	      case EV_ENCODER_CCW:     lcd_resettimer(); menu_button_up(); break;
+	      case EV_ENCODER_CW:      lcd_resettimer(); menu_button_down(); break;
+	      case EV_ENCODER_PUSH:    lcd_resettimer(); menu_activate(); break;
+	      case EV_TICK:            lcd_timeout(); key_timer(); menutimer(); break;
 	      case EV_SMAUL_PUSH:      break;
 	    }
 	  }
