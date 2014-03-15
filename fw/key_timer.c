@@ -7,9 +7,8 @@
 #include "key_timer.h"
 
 // the key-timers.
-int timer_state = 0;
 int keyTimers[MAX_KEYS + NUM_PIZZA_TIMERS];
-static int triggerDisplayUpdate = 1;
+uint8_t expired_key = 0;
 
 void initTimers() {
   int i;
@@ -18,17 +17,12 @@ void initTimers() {
   }
 }
 
-
-static void menu_start_beeping(int slot) {
-  if (slot == MAX_KEYS + 0) {
-    beeper_start(BEEP_PIZZA1);
-  } else if (slot == MAX_KEYS + 1) {
-    beeper_start(BEEP_PIZZA2);
-  } else if (slot == MAX_KEYS + 2) {
-    beeper_start(BEEP_PIZZA3);
-  } else {
-    beeper_start(BEEP_KEYMISSING);
-  }
+static void key_timer_expired(int slot) {
+	if (slot >= MAX_KEYS)
+		beeper_start(slot - MAX_KEYS + BEEP_PIZZA1);
+	else
+		beeper_start(BEEP_KEYMISSING);
+	expired_key = slot + 1;
 }
 
 void key_smaul() {
@@ -45,23 +39,22 @@ void key_smaul() {
   // check if there's another key that needs handling.
   for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
     if (keyTimers[i] == 0) {
-      menu_start_beeping(i);
+      key_timer_expired(i);
       return;
     }
   }
 
+  expired_key = 0;
   beeper_stop();
 }
 
 void key_timer() {
-  triggerDisplayUpdate = 1;
-
   int i;
   for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
     if (keyTimers[i] > 0) {
       keyTimers[i] --;
       if (keyTimers[i] == 0) {
-        menu_start_beeping(i);
+        key_timer_expired(i);
       }
     }
   }
@@ -77,17 +70,16 @@ void setKeyTimeout(int key, int time) {
   // TODO: find out which key is missing and 
 }
 
-
 static void print_time(int timeInSeconds, char *destination) {
-  if (timeInSeconds == -1) {
-    strcpy_P(destination, PSTR("---"));
- } else if (timeInSeconds < 60) {
-    // print <timeInSeconds>s
-    sprintf_P(destination, PSTR("%2ds"), timeInSeconds);
-  } else {
-    // print <timeInSeconds / 60>m
-    sprintf_P(destination, PSTR("%2dm"), timeInSeconds / 60);
-  }
+	if (timeInSeconds == -1) {
+		lcd_print_update_P(1, PSTR("--- "));
+	} else if (timeInSeconds < 60) {
+		// print <timeInSeconds>s
+		lcd_print_update_P(1, PSTR("%2ds "), timeInSeconds);
+	} else {
+		// print <timeInSeconds / 60>m
+		lcd_print_update_P(1, PSTR("%2dm "), timeInSeconds / 60);
+	}
 }
 
 /** 
@@ -129,13 +121,12 @@ static int getMinimumKeyTimer() {
 void keytimer_displayupdate() {
 	char parts[4][4];
 
-	// check pizza timers
+	lcd_print_start(1);
 	print_time(keyTimers[MAX_KEYS + 0], parts[0]);
 	print_time(keyTimers[MAX_KEYS + 1], parts[1]);
 	print_time(keyTimers[MAX_KEYS + 2], parts[2]);
 	print_time(getMinimumKeyTimer(), parts[3]);
-
-	lcd_printfP(1, PSTR("%s %s %s %s"), parts[0], parts[1], parts[2], parts[3]);
+	lcd_print_end(1);
 }
 
 

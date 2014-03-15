@@ -59,6 +59,9 @@ void keyled_blink(uint8_t which);
 void keyleds_off(void);
 
 void lcd_printfP(uint8_t line, const char *fmt, ...);
+void lcd_print_start(uint8_t line);
+void lcd_print_update_P(uint8_t line, const char *fmt, ...);
+void lcd_print_end(uint8_t line);
 void lcd_poll(void);
 
 void panel_init(void);

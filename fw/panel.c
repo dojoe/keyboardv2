@@ -323,16 +323,28 @@ struct lcd_line {
 };
 static struct lcd_line lcd_lines[2];
 
-void lcd_printfP(uint8_t line, const char *fmt, ...)
+void lcd_print_start(uint8_t line)
+{
+	lcd_writing = 1;
+	lcd_lines[line].len = 0;
+}
+
+void lcd_print_update_P(uint8_t line, const char *fmt, ...)
 {
 	va_list varargs;
 	struct lcd_line *l = lcd_lines + line;
 
-	lcd_writing = 1;
+	if (l->len >= MAX_LCD_LINE - 1)
+		return;
 
 	va_start(varargs, fmt);
-	l->len = vsnprintf_P(l->text, MAX_LCD_LINE, fmt, varargs);
+	l->len += vsnprintf_P(l->text + l->len, MAX_LCD_LINE - l->len, fmt, varargs);
 	va_end(varargs);
+}
+
+void lcd_print_end(uint8_t line)
+{
+	struct lcd_line *l = lcd_lines + line;
 
 	l->pos = 0;
 	if (l->len > 16) {
@@ -345,6 +357,17 @@ void lcd_printfP(uint8_t line, const char *fmt, ...)
 
 	lcd_writing = 0;
 	lcd_changed = 1;
+}
+
+void lcd_printfP(uint8_t line, const char *fmt, ...)
+{
+	va_list varargs;
+
+	lcd_print_start(line);
+	va_start(varargs, fmt);
+	lcd_lines[line].len = vsnprintf_P(lcd_lines[line].text, MAX_LCD_LINE, fmt, varargs);
+	va_end(varargs);
+	lcd_print_end(line);
 }
 
 static void lcd_update(void)
