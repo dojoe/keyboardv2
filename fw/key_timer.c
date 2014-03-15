@@ -1,11 +1,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifndef __NO_INCLUDE_AVR
-#include <avr/pgmspace.h>
-#else
-#define PSTR(str) str
-#endif
 #include "hw.h"
 #include "lcd_drv.h"
 #include "common.h"

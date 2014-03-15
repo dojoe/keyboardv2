@@ -3,8 +3,10 @@
 
 #ifndef __NO_INCLUDE_AVR
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #else 
 #include <stdint.h>
+#define PSTR(str) str
 #endif // __NO_INCLUDE_AVR
 
 // Access bits like variables
