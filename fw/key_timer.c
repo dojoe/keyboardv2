@@ -30,8 +30,29 @@ static void menu_start_beeping(int slot) {
   }
 }
 
+void key_smaul() {
+  int i;
+  // is there a key missing?
+  for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
+    if (keyTimers[i] == 0) {
+      // clear the first key timer -> set + 5 Minutes.
+      keyTimers[i] = 300;
+      break;
+    }
+  }
 
-void schluessel_timer() {
+  // check if there's another key that needs handling.
+  for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
+    if (keyTimers[i] == 0) {
+      menu_start_beeping(i);
+      return;
+    }
+  }
+
+  beeper_start(BEEP_OFF);
+}
+
+void key_timer() {
   triggerDisplayUpdate = 1;
 
   int i;
@@ -105,7 +126,7 @@ static int getMinimumKeyTimer() {
   return -1;
 }
 
-void schluesseltimer_displayupdate() {
+void keytimer_displayupdate() {
   if (! triggerDisplayUpdate) {
     return;
   }

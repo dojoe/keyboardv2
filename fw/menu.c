@@ -141,19 +141,22 @@ void menutimer() {
 
 int call_menu() {
   extern void initTimers();
-	extern void schluessel_timer();
-	extern void schluesseltimer_displayupdat();
-  extern void schluesseltimer_displayupdate();
+	extern void key_timer();
+  extern void key_smaul();
+	extern void keytimer_displayupdat();
+  extern void keytimer_displayupdate();
 
   initTimers();
 
   for (;;) {
 
 		for (;;) {
-			schluesseltimer_displayupdate();
+			keytimer_displayupdate();
 			switch(get_event()) {
 				case EV_ENCODER_PUSH: goto startmenu;
-				case EV_TICK:			    schluessel_timer(); 
+				case EV_TICK:			    key_timer(); 
+                              break;
+        case EV_SMAUL_PUSH:   key_smaul();
                               break;
 			}
 		}
