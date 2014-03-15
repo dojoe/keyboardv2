@@ -11,7 +11,7 @@
 #include <greatest.h>
 
 #include "beeper_mock.h"
-#include "../schluesseltimer.c"
+#include "../key_timer.c"
 #include "lcd_drv_mock.h"
 
 
