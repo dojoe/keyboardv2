@@ -129,19 +129,13 @@ static int getMinimumKeyTimer() {
 void keytimer_displayupdate() {
 	char parts[4][4];
 
-  if (! triggerDisplayUpdate) {
-    return;
-  }
-  
-  triggerDisplayUpdate = 0;
+	// check pizza timers
+	print_time(keyTimers[MAX_KEYS + 0], parts[0]);
+	print_time(keyTimers[MAX_KEYS + 1], parts[1]);
+	print_time(keyTimers[MAX_KEYS + 2], parts[2]);
+	print_time(getMinimumKeyTimer(), parts[3]);
 
-  // check pizza timers
-  print_time(keyTimers[MAX_KEYS + 0], parts[0]);
-  print_time(keyTimers[MAX_KEYS + 1], parts[1]);
-  print_time(keyTimers[MAX_KEYS + 2], parts[2]);
-  print_time(getMinimumKeyTimer(), parts[3]);
-
-  lcd_printfP(1, PSTR("%s %s %s %s"), parts[0], parts[1], parts[2], parts[3]);
+	lcd_printfP(1, PSTR("%s %s %s %s"), parts[0], parts[1], parts[2], parts[3]);
 }
 
 

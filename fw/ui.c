@@ -7,42 +7,23 @@
 #include "panel.h"
 #include "ui.h"
 
-enum ui_state {
-	UIS_IDLE,
-	UIS_MENU,
-};
-
-uint8_t  menu_state = 0;
+uint8_t  ui_state = UIS_INACTIVE;
 uint8_t  selected_key = 0;
 uint16_t selected_time = 0;
-uint8_t  menu_timer = 0;
-uint8_t  ui_state = UIS_IDLE;
+uint8_t  ui_timer = 0;
 
-/** 
- * this method is used internally to reset the timer for ending the menu mode.
- */
-void _resetTimer() {
-  switch(menu_state) {
-    case MENU_STATE_INACTIVE:  menu_timer = 0; break;
-
-    case MENU_STATE_PIZZA1:
-    case MENU_STATE_PIZZA2:
-    case MENU_STATE_PIZZA3:    menu_timer = MENU_TIMEOUT_SECONDS; break;
-
-    case MENU_STATE_SELECT_REPAINT:
-    case MENU_STATE_SELECT_TIME:
-                               menu_timer = MENU_TIMEOUT_SELECT_SECONDS; break;
-  }
-}
-
-static void menu_repaint() {
+static void menu_repaint(void) {
 	uint8_t n;
 
-	switch (menu_state) {
-	case MENU_STATE_PIZZA1:
-	case MENU_STATE_PIZZA2:
-	case MENU_STATE_PIZZA3:
-		n = menu_state - MENU_STATE_PIZZA1;
+	switch (ui_state) {
+	case UIS_INACTIVE:
+		keytimer_displayupdate();
+		break;
+
+	case UIS_PIZZA1:
+	case UIS_PIZZA2:
+	case UIS_PIZZA3:
+		n = ui_state - UIS_PIZZA1;
 		if (pizzatimer_running(n) != 0) {
 			lcd_printfP(0, PSTR("Pizzatimer %d Off"), n + 1);
 		} else {
@@ -50,8 +31,7 @@ static void menu_repaint() {
 		}
 		break;
 
-	case MENU_STATE_SELECT_REPAINT:
-	case MENU_STATE_SELECT_TIME:
+	case UIS_SELECT_TIME:
 		lcd_printfP(1, PSTR("%02i:%02i"), selected_time / 60,
 				selected_time % 60);
 		break;
@@ -59,169 +39,151 @@ static void menu_repaint() {
 
 }
 
-void menu_enter(void) {
-	menu_state = MENU_STATE_PIZZA1;
-	ui_state = UIS_MENU;
-	_resetTimer();
-	lcd_printfP(0, PSTR(""));
-	lcd_printfP(1, PSTR(""));
-}
-
-void menu_exit(void) {
-	menu_state = MENU_STATE_INACTIVE;
-	ui_state = UIS_IDLE;
-	lcd_printfP(0, PSTR(""));
-	lcd_printfP(1, PSTR(""));
-}
-
-static void menu_loop() {
-	uint8_t n;
-
-  if (menu_state == MENU_STATE_INACTIVE) {
-    return;
-  } else if (menu_state == MENU_STATE_APPLY_TIMER) { 
-    setKeyTimeout(selected_key, selected_time);
-    menu_exit();
-    return;
-  }
-
-  switch (menu_state) {
-	  case MENU_STATE_SELECT_REPAINT:
-		  menu_state = MENU_STATE_SELECT_TIME;
-		  break;
-  }
-}
-
 /**
- * this method is externally called when the
+ * this method is used internally to reset the timer for ending the menu mode.
  */
-void menu_activate() {
-	uint8_t n;
-
-	switch (menu_state) {
-	// enable the menu;
-	case MENU_STATE_INACTIVE:
-		menu_state = MENU_STATE_PIZZA1;
+static void reset_ui_timer(void) {
+	switch (ui_state) {
+	case UIS_INACTIVE:
+		ui_timer = 0;
 		break;
 
-	case MENU_STATE_PIZZA1:
-	case MENU_STATE_PIZZA2:
-	case MENU_STATE_PIZZA3:
-		n = menu_state - MENU_STATE_PIZZA1;
+	case UIS_PIZZA1:
+	case UIS_PIZZA2:
+	case UIS_PIZZA3:
+		ui_timer = MENU_TIMEOUT_SECONDS;
+		break;
+
+	case UIS_SELECT_TIME:
+		ui_timer = MENU_TIMEOUT_SELECT_SECONDS;
+		break;
+	}
+}
+
+static void menu_enter(void) {
+	ui_state = UIS_PIZZA1;
+	reset_ui_timer();
+	lcd_printfP(0, PSTR(""));
+	lcd_printfP(1, PSTR(""));
+}
+
+static void menu_exit(void) {
+	ui_state = UIS_INACTIVE;
+	lcd_printfP(0, PSTR(""));
+	lcd_printfP(1, PSTR(""));
+}
+
+static void apply_timer(void) {
+	setKeyTimeout(selected_key, selected_time);
+	menu_exit();
+}
+
+static void count_ui_timer(void) {
+	if (ui_timer && !(--ui_timer)) {
+		if (ui_state == UIS_SELECT_TIME) {
+			apply_timer();
+		} else {
+			menu_exit();
+		}
+	}
+}
+
+static void menu_activate(void) {
+	uint8_t n;
+
+	switch (ui_state) {
+	// enable the menu;
+	case UIS_INACTIVE:
+		menu_enter();
+		break;
+
+	case UIS_PIZZA1:
+	case UIS_PIZZA2:
+	case UIS_PIZZA3:
+		n = ui_state - UIS_PIZZA1;
 		if (pizzatimer_running(n) != 0) {
 			pizzatimer_clear(n);
 			menu_exit();
 		} else {
 			selected_time = PIZZA_TIMER_DEFAULT_TIME;
 			selected_key = KEY_ID_PIZZATIMER_OFFSET + n;
-			menu_state = MENU_STATE_SELECT_REPAINT;
+			ui_state = UIS_SELECT_TIME;
 		}
 		break;
 
-	case MENU_STATE_SELECT_REPAINT:
-	case MENU_STATE_SELECT_TIME:
-		menu_state = MENU_STATE_APPLY_TIMER;
+	case UIS_SELECT_TIME:
+		apply_timer();
 		break;
 	}
-
-	_resetTimer();
-	menu_repaint();
 }
 
-static void menu_button_down() {
-  _resetTimer();
-  switch(menu_state) {
-    case MENU_STATE_PIZZA1:		 	 menu_state = MENU_STATE_PIZZA2; break;
-    case MENU_STATE_PIZZA2:		   menu_state = MENU_STATE_PIZZA3; break;
-    case MENU_STATE_PIZZA3:		   menu_state = MENU_STATE_PIZZA1; break;
+static void menu_button_down(void) {
+  switch(ui_state) {
+    case UIS_PIZZA1:		 	 ui_state = UIS_PIZZA2; break;
+    case UIS_PIZZA2:		   ui_state = UIS_PIZZA3; break;
+    case UIS_PIZZA3:		   ui_state = UIS_PIZZA1; break;
 
-    case MENU_STATE_SELECT_REPAINT:
-    case MENU_STATE_SELECT_TIME: menu_state = MENU_STATE_SELECT_REPAINT;
-                                 selected_time = max(60, selected_time+60);
+    case UIS_SELECT_TIME: selected_time = max(60, selected_time+60);
                                  break;
   }
-
-  menu_repaint();
 }
 
-static void menu_button_up() {
-  _resetTimer();
-  switch(menu_state) {
-    case MENU_STATE_PIZZA1:		   menu_state = MENU_STATE_PIZZA3; break;
-    case MENU_STATE_PIZZA2:		   menu_state = MENU_STATE_PIZZA1; break;
-    case MENU_STATE_PIZZA3:		   menu_state = MENU_STATE_PIZZA2; break;
+static void menu_button_up(void) {
+  switch(ui_state) {
+    case UIS_PIZZA1:		   ui_state = UIS_PIZZA3; break;
+    case UIS_PIZZA2:		   ui_state = UIS_PIZZA1; break;
+    case UIS_PIZZA3:		   ui_state = UIS_PIZZA2; break;
 
-    case MENU_STATE_SELECT_REPAINT:
-    case MENU_STATE_SELECT_TIME: menu_state = MENU_STATE_SELECT_REPAINT;
-                                 selected_time = min(99*60, selected_time-60);
+    case UIS_SELECT_TIME: selected_time = min(99*60, selected_time-60);
                                  break;
   }
-
-  menu_repaint();
 }
 
-void menutimer() {
-  menu_timer--;
-  if (menu_timer < 1) {
-    if (menu_state == MENU_STATE_SELECT_TIME || menu_state == MENU_STATE_SELECT_REPAINT) {
-      menu_state = MENU_STATE_APPLY_TIMER;
-    } else {
-      menu_exit();
-    }
-  }
+static void menu_button_smaul(void) {
+	switch (ui_state) {
+	case UIS_INACTIVE:
+		key_smaul();
+		break;
+	default:
+		menu_exit();
+		break;
+	}
 }
-
 
 #ifndef __NO_INCLUDE_AVR
 
-static void ui_poll_idle(void)
+void ui_poll(void)
 {
-	keytimer_displayupdate();
+	uint8_t event = get_event();
 
-	switch (get_event()) {
-	case EV_ENCODER_PUSH:
-		enable_lcd_backlight();
-		menu_enter();
-		menu_repaint();
-		break;
-	case EV_TICK:
-		key_timer();
-		break;
-	case EV_SMAUL_PUSH:
-		key_smaul();
-		break;
-	case EV_ENCODER_CCW:
-	case EV_ENCODER_CW:
-		enable_lcd_backlight();
-		break;
-	}
-}
+	if (event == EV_NONE)
+		return;
 
-static void ui_poll_menu(void)
-{
-	switch (get_event()) {
+	switch (event) {
 	case EV_ENCODER_CCW:
-		enable_lcd_backlight();
 		menu_button_up();
 		break;
 	case EV_ENCODER_CW:
-		enable_lcd_backlight();
 		menu_button_down();
 		break;
 	case EV_ENCODER_PUSH:
-		enable_lcd_backlight();
 		menu_activate();
 		break;
 	case EV_TICK:
 		key_timer();
-		menutimer();
+		count_ui_timer();
 		break;
 	case EV_SMAUL_PUSH:
-		menu_exit();
+		menu_button_smaul();
 		break;
 	}
 
-	menu_loop();
+	if (event != EV_TICK) {
+		enable_lcd_backlight();
+		reset_ui_timer();
+	}
+
+	menu_repaint();
 }
 
 void ui_init(void)
@@ -229,18 +191,4 @@ void ui_init(void)
 	initTimers();
 }
 
-void ui_poll(void)
-{
-	switch (ui_state) {
-	case UIS_IDLE:
-		ui_poll_idle();
-		break;
-	case UIS_MENU:
-		ui_poll_menu();
-		break;
-	}
-}
-
 #endif // __NO_INCLUDE_AVR
-
-
