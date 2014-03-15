@@ -1,8 +1,10 @@
 #ifndef _lcd_drv_h_
 #define _lcd_drv_h_
 
+#ifndef __NO_INCLUDE_AVR
 #include <avr/io.h>
 #include <util/delay.h>
+#endif // __NO_INCLUDE_AVR
 
 #include "hw.h"
 

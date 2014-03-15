@@ -1,7 +1,11 @@
 #ifndef HW_H_
 #define HW_H_
 
+#ifndef __NO_INCLUDE_AVR
 #include <avr/io.h>
+#else 
+#include <stdint.h>
+#endif // __NO_INCLUDE_AVR
 
 // Access bits like variables
 struct bits {
@@ -31,5 +35,21 @@ struct shiftregs {
 	uint8_t key_sel:3, key_en:1, blaulicht:1, beeper:1, nc:2;
 	uint8_t leds;
 };
+
+#define min(x,y)  ((x)<(y) ? (x) : (y))
+#define max(x,y)  ((x)>(y) ? (x) : (y))
+
+#ifndef __NO_INCLUDE_AVR
+#include "panel.h"
+#endif // __NO_INCLUDE_AVR
+
+
+// Magic Constnats:
+
+#define KEY_ID_PIZZATIMER_OFFSET 									250
+#define KEY_ID_PIZZATIMER_1												(KEY_ID_PIZZATIMER_OFFSET+0)
+#define KEY_ID_PIZZATIMER_2												(KEY_ID_PIZZATIMER_OFFSET+1)
+#define KEY_ID_PIZZATIMER_3												(KEY_ID_PIZZATIMER_OFFSET+2)
+#define NUM_PIZZA_TIMERS													3
 
 #endif /* HW_H_ */
