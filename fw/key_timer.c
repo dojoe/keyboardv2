@@ -3,7 +3,7 @@
 #include "hw.h"
 #include "lcd_drv.h"
 #include "common.h"
-#include "schluesseltimer.h"
+#include "key_timer.h"
 
 // the key-timers.
 int timer_state = 0;
