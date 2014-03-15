@@ -5,8 +5,9 @@
 #include "hw.h"
 #endif // __NO_INCLUDE_AVR
 
+#define LCD_BACKLIGHT_TIMEOUT_SECS 30
+
 extern struct shiftregs shiftregs;
-void shiftreg_reset(void);
 void shiftreg_update(void);
 
 #ifndef __NO_INCLUDE_AVR
@@ -47,7 +48,7 @@ static inline void beeper_stop(void) {
 #define LCD_LED_UP   42
 #define LCD_LED_DOWN 3
 
-void set_lcd_backlight(uint8_t on);
+void enable_lcd_backlight(void);
 
 void smaul_pulse(uint8_t frequency);
 void smaul_blink(uint8_t frequency);
@@ -59,5 +60,7 @@ void keyleds_off(void);
 
 void lcd_printfP(uint8_t line, const char *fmt, ...);
 void lcd_poll(void);
+
+void panel_init(void);
 
 #endif /* PANEL_H_ */

@@ -33,7 +33,7 @@ ISR(SPI_STC_vect)
 
 #define SPI_SETTINGS (1 << SPE) | (0 << DORD) | (1 << MSTR) | (0 << CPOL) | (0 << CPHA) | (2 << SPR0)
 
-void shiftreg_reset(void)
+static void shiftreg_reset(void)
 {
 	uint8_t dummy __attribute__((unused));
 
@@ -185,6 +185,7 @@ volatile uint8_t global_qs_timer;
 static uint8_t lcd_led_brightness = LCD_LED_DIM;
 static uint8_t smaul_led_osc = 0;
 static volatile uint8_t lcd_led_state = LCD_NONE;
+static volatile uint8_t lcd_led_timer = 0;
 static volatile uint8_t smaul_led_state = SMAUL_OFF;
 static volatile uint8_t smaul_led_frequency;
 
@@ -255,9 +256,11 @@ static void pwmled_update(void)
 	}
 }
 
-void set_lcd_backlight(uint8_t on)
+void enable_lcd_backlight(void)
 {
-	lcd_led_state = on ? LCD_BRIGHT : LCD_DARK;
+	if (!lcd_led_timer)
+		lcd_led_state = LCD_BRIGHT;
+	lcd_led_timer = LCD_BACKLIGHT_TIMEOUT_SECS;
 }
 
 void smaul_pulse(uint8_t frequency)
@@ -318,17 +321,19 @@ struct lcd_line {
 	char text[MAX_LCD_LINE + 16];
 	uint8_t len, pos;
 };
-static struct lcd_line lcd_lines[2] = { { { 0 } } };
+static struct lcd_line lcd_lines[2];
 
 void lcd_printfP(uint8_t line, const char *fmt, ...)
 {
 	va_list varargs;
 	struct lcd_line *l = lcd_lines + line;
 
-	va_start(varargs, fmt);
 	lcd_writing = 1;
 
+	va_start(varargs, fmt);
 	l->len = vsnprintf_P(l->text, MAX_LCD_LINE, fmt, varargs);
+	va_end(varargs);
+
 	l->pos = 0;
 	if (l->len > 16) {
 		memcpy(l->text + l->len, l->text, 16);
@@ -340,7 +345,6 @@ void lcd_printfP(uint8_t line, const char *fmt, ...)
 
 	lcd_writing = 0;
 	lcd_changed = 1;
-	va_end(varargs);
 }
 
 static void lcd_update(void)
@@ -387,7 +391,32 @@ ISR(TIMER3_OVF_vect)
 		keyleds_update();
 		if (lcd_changed && !lcd_writing)
 			lcd_needs_update = 1;
-		if ((global_qs_timer & 3) == 0)
+		if ((global_qs_timer & 3) == 0) {
 			push_event(EV_TICK);
+			if (lcd_led_timer && !(--lcd_led_timer))
+				lcd_led_state = LCD_DARK;
+		}
 	}
+}
+
+void panel_init(void)
+{
+	lcd_printfP(0, PSTR(""));
+	lcd_printfP(1, PSTR(""));
+
+	shiftreg_reset();
+
+	// Set up T/C 1 for 8-bit fast PWM running at F_CPU/256 (64kHz), resulting in a PWM period of 250 Hz
+	// Also, use inverted PWM so it's possible to turn the pin off completely
+	set_lcd_led(LCD_LED_DIM);
+	set_smaul_led(0);
+	TCCR1A = (1 << WGM10) | (3 << COM1A0) | (3 << COM1B0) | (0 << COM1C0);
+	TCCR1B = (1 << WGM12) | (4 << CS10);
+
+	/* Set up T/C3 to run at CLK/64 and do 8-bit PWM, leading to an OCR int at F_CPU / 16k, i.e. roughly 1kHz */
+	TCNT3 = 0;
+	TIMSK3 = 1 << TOIE3;
+	TIFR3  = 1 << TOV3;
+	TCCR3A = 1 << WGM30;
+	TCCR3B = 1 << WGM32 | 3 << CS30;
 }

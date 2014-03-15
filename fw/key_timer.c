@@ -1,6 +1,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifndef __NO_INCLUDE_AVR
+#include <avr/pgmspace.h>
+#else
+#define PSTR(str) str
+#endif
 #include "hw.h"
 #include "lcd_drv.h"
 #include "common.h"
@@ -50,7 +55,7 @@ void key_smaul() {
     }
   }
 
-  beeper_start(BEEP_OFF);
+  beeper_stop();
 }
 
 void key_timer() {
@@ -78,24 +83,16 @@ void setKeyTimeout(int key, int time) {
 }
 
 
-static void print_time(int timeInSeconds) {
+static void print_time(int timeInSeconds, char *destination) {
   if (timeInSeconds == -1) {
-    lcd_puts("--- ");
-    return;
-  }
-
-  char buffer[6];
-  memset(buffer, 0, 6);
-
-  if (timeInSeconds < 60) {
+    strcpy_P(destination, PSTR("---"));
+ } else if (timeInSeconds < 60) {
     // print <timeInSeconds>s
-    sprintf(buffer, "%2ds ", timeInSeconds);
+    sprintf_P(destination, PSTR("%2ds"), timeInSeconds);
   } else {
     // print <timeInSeconds / 60>m
-    sprintf(buffer, "%2dm ", timeInSeconds / 60);
+    sprintf_P(destination, PSTR("%2dm"), timeInSeconds / 60);
   }
-
-  lcd_puts(buffer);
 }
 
 /** 
@@ -135,27 +132,21 @@ static int getMinimumKeyTimer() {
 }
 
 void keytimer_displayupdate() {
+	char parts[4][4];
+
   if (! triggerDisplayUpdate) {
     return;
   }
   
   triggerDisplayUpdate = 0;
 
-  lcd_blank(32);
-  lcd_xy(0, 0);
-
-  // if there's a key pulled, display in line 2...
-  lcd_puts("                ");
-
   // check pizza timers
-  print_time(keyTimers[MAX_KEYS + 0]);
-  print_time(keyTimers[MAX_KEYS + 1]);
-  print_time(keyTimers[MAX_KEYS + 2]);
+  print_time(keyTimers[MAX_KEYS + 0], parts[0]);
+  print_time(keyTimers[MAX_KEYS + 1], parts[1]);
+  print_time(keyTimers[MAX_KEYS + 2], parts[2]);
+  print_time(getMinimumKeyTimer(), parts[3]);
 
-  // check other timer:
-  if (getMinimumKeyTimer() != -1) {
-
-  }
+  lcd_printfP(1, PSTR("%s %s %s %s"), parts[0], parts[1], parts[2], parts[3]);
 }
 
 

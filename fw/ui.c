@@ -4,7 +4,8 @@
 #include "lcd_drv.h"
 #include "menu-defs.h"
 #include "common.h"
-
+#include "panel.h"
+#include "ui.h"
 
 int menu_state = 0;
 int selected_key = 0;
@@ -171,45 +172,80 @@ void menutimer() {
 
 #ifndef __NO_INCLUDE_AVR
 
-int call_menu() {
-  extern void initTimers();
-	extern void key_timer();
-  extern void key_smaul();
-  extern void keytimer_displayupdate();
+enum ui_state {
+	UIS_IDLE,
+	UIS_MENU,
+};
 
-  initTimers();
+uint8_t ui_state = UIS_IDLE;
 
-  for (;;) {
+static void ui_poll_idle(void)
+{
+	keytimer_displayupdate();
 
-		for (;;) {
-			keytimer_displayupdate();
-			switch(get_event()) {
-				case EV_ENCODER_PUSH: lcd_resettimer(); goto startmenu;
-				case EV_TICK:			    lcd_timeout(); key_timer(); 
-                              break;
-        case EV_SMAUL_PUSH:   lcd_resettimer(); key_smaul();
-                              break;
-        case EV_ENCODER_CCW:
-        case EV_ENCODER_CW:  lcd_resettimer(); break;
-			}
-		}
+	switch (get_event()) {
+	case EV_ENCODER_PUSH:
+		enable_lcd_backlight();
+		menu_reset();
+		menu_activate();
+		ui_state = UIS_MENU;
+		break;
+	case EV_TICK:
+		key_timer();
+		break;
+	case EV_SMAUL_PUSH:
+		key_smaul();
+		break;
+	case EV_ENCODER_CCW:
+	case EV_ENCODER_CW:
+		enable_lcd_backlight();
+		break;
+	}
+}
 
-startmenu:
-	  menu_reset();
-	  menu_activate();
-	
-	  for (;menu_state != MENU_STATE_INACTIVE;) {
-	    menu_loop();
-	
-	    switch(get_event()) {
-	      case EV_ENCODER_CCW:     lcd_resettimer(); menu_button_up(); break;
-	      case EV_ENCODER_CW:      lcd_resettimer(); menu_button_down(); break;
-	      case EV_ENCODER_PUSH:    lcd_resettimer(); menu_activate(); break;
-	      case EV_TICK:            lcd_timeout(); key_timer(); menutimer(); break;
-	      case EV_SMAUL_PUSH:      break;
-	    }
-	  }
+static void ui_poll_menu(void)
+{
+	switch (get_event()) {
+	case EV_ENCODER_CCW:
+		enable_lcd_backlight();
+		menu_button_up();
+		break;
+	case EV_ENCODER_CW:
+		enable_lcd_backlight();
+		menu_button_down();
+		break;
+	case EV_ENCODER_PUSH:
+		enable_lcd_backlight();
+		menu_activate();
+		break;
+	case EV_TICK:
+		key_timer();
+		menutimer();
+		break;
+	case EV_SMAUL_PUSH:
+		break;
+	}
 
+	menu_loop();
+
+	if (menu_state == MENU_STATE_INACTIVE)
+		ui_state = UIS_IDLE;
+}
+
+void ui_init(void)
+{
+	initTimers();
+}
+
+void ui_poll(void)
+{
+	switch (ui_state) {
+	case UIS_IDLE:
+		ui_poll_idle();
+		break;
+	case UIS_MENU:
+		ui_poll_menu();
+		break;
 	}
 }
 
