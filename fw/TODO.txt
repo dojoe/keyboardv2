@@ -124,4 +124,13 @@ serial.[ch]
 
 control.[ch]
 
+* Menü
+* Zeit runterzählen
+* Zeug auf LCD darstellen
+* Smaul
+* Pizzatimer stoppen
+* Auf Schlüsselereignisse reagieren
+
+
+
 Zentrale State Machine

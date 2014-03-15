@@ -1,4 +1,7 @@
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -6,6 +9,7 @@
 #include "hw.h"
 #include "panel.h"
 #include "common.h"
+#include "lcd_drv.h"
 
 struct shiftregs shiftregs = {
 	0, 1, 0, 0, 0, 0
@@ -305,6 +309,68 @@ void keyleds_off(void)
 	shiftreg_update();
 }
 
+#define MAX_LCD_LINE 80
+
+static volatile uint8_t lcd_writing = 0;
+static uint8_t lcd_changed = 0;
+static volatile uint8_t lcd_needs_update = 0;
+struct lcd_line {
+	char text[MAX_LCD_LINE + 16];
+	uint8_t len, pos;
+};
+static struct lcd_line lcd_lines[2] = { { { 0 } } };
+
+void lcd_printfP(uint8_t line, const char *fmt, ...)
+{
+	va_list varargs;
+	struct lcd_line *l = lcd_lines + line;
+
+	va_start(varargs, fmt);
+	lcd_writing = 1;
+
+	l->len = vsnprintf_P(l->text, MAX_LCD_LINE, fmt, varargs);
+	l->pos = 0;
+	if (l->len > 16) {
+		memcpy(l->text + l->len, l->text, 16);
+		l->text[l->len + 16] = 0;
+	} else if (l->len < 16) {
+		memset(l->text + l->len, ' ', 16 - l->len);
+		l->text[16] = 0;
+	}
+
+	lcd_writing = 0;
+	lcd_changed = 1;
+	va_end(varargs);
+}
+
+static void lcd_update(void)
+{
+	struct lcd_line *line;
+	uint8_t i;
+
+	lcd_xy(0, 0);
+	lcd_changed = 0;
+	for (line = lcd_lines; line < (lcd_lines + ARRAY_SIZE(lcd_lines)); line++) {
+		for (i = 0; i < 16; i++)
+			lcd_putchar(line->text[line->pos + i]);
+
+		if (line->len > 16) {
+			if (line->pos >= line->len - 1)
+				line->pos = 0;
+			else
+				line->pos++;
+			lcd_changed = 1;
+		}
+	}
+}
+
+void lcd_poll(void)
+{
+	if (lcd_needs_update)
+		lcd_update();
+	lcd_needs_update = 0;
+}
+
 /* Use timer/counter 3 as system tick source because
  *  a) it has lower interrupt priority than T/C0 which is used for one-wire communication
  *  b) it has only one PWM pin connected to package pins
@@ -319,6 +385,8 @@ ISR(TIMER3_OVF_vect)
 	if (!global_ms_timer) {
 		global_qs_timer++;
 		keyleds_update();
+		if (lcd_changed && !lcd_writing)
+			lcd_needs_update = 1;
 		if ((global_qs_timer & 3) == 0)
 			push_event(EV_TICK);
 	}

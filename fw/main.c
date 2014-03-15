@@ -85,6 +85,7 @@ int main(void)
 		usb_poll();
 		eep_poll();
 		key_poll();
+		lcd_poll();
 
 		switch (get_event()) {
 		case EV_ENCODER_CW:
