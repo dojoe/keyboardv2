@@ -201,8 +201,8 @@ startmenu:
 	    menu_loop();
 	
 	    switch(get_event()) {
-	      case EV_ENCODER_CCW:     menu_button_up(); break;
-	      case EV_ENCODER_CW:      menu_button_down(); break;
+	      case EV_ENCODER_CW:      menu_button_up(); break;
+	      case EV_ENCODER_CCW:     menu_button_down(); break;
 	      case EV_ENCODER_PUSH:    menu_activate(); break;
 	      case EV_TICK:            menutimer(); break;
 	      case EV_SMAUL_PUSH:      break;
