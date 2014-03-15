@@ -80,7 +80,7 @@ void setKeyTimeout(int key, int time) {
 
 static void print_time(int timeInSeconds) {
   if (timeInSeconds == -1) {
-    lcd_puts("    ");
+    lcd_puts("--- ");
     return;
   }
 
@@ -96,21 +96,6 @@ static void print_time(int timeInSeconds) {
   }
 
   lcd_puts(buffer);
-}
-
-/** 
- * helper to check if any timer is active
- * @return bool 0 or 1
- */
-static int isTimerActive() {
-  int i;
-  for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
-    if (keyTimers[i] != -1) {
-      return 1;
-    }
-  }
-
-  return 0;
 }
 
 /** 
@@ -160,18 +145,16 @@ void keytimer_displayupdate() {
   lcd_xy(0, 0);
 
   // if there's a key pulled, display in line 2...
-  if (isTimerActive()) {
-    lcd_puts("                ");
+  lcd_puts("                ");
 
-    // check pizza timers
-    print_time(keyTimers[MAX_KEYS + 0]);
-    print_time(keyTimers[MAX_KEYS + 1]);
-    print_time(keyTimers[MAX_KEYS + 2]);
+  // check pizza timers
+  print_time(keyTimers[MAX_KEYS + 0]);
+  print_time(keyTimers[MAX_KEYS + 1]);
+  print_time(keyTimers[MAX_KEYS + 2]);
 
-    // check other timer:
-    if (getMinimumKeyTimer() != -1) {
+  // check other timer:
+  if (getMinimumKeyTimer() != -1) {
 
-    }
   }
 }
 
