@@ -18,10 +18,13 @@ void initTimers() {
 }
 
 static void key_timer_expired(int slot) {
-	if (slot >= MAX_KEYS)
+	if (slot >= MAX_KEYS) {
 		beeper_start(slot - MAX_KEYS + BEEP_PIZZA1);
-	else
+	} else {
 		beeper_start(BEEP_KEYMISSING);
+  }
+
+  smaul_pulse(500);
 	expired_key = slot + 1;
 }
 
@@ -46,6 +49,7 @@ void key_smaul() {
 
   expired_key = 0;
   beeper_stop();
+  smaul_stop();
 }
 
 void key_timer() {
