@@ -21,7 +21,7 @@ static void print_missing_key(void) {
 	if (!expired_key) {
 		lcd_printfP(0, PSTR(""));
 	} else if (slot < MAX_KEYS) {
-		lcd_printfP(0, PSTR("Key %s missing"), keys[slot].eep.key.name);
+		lcd_printfP(0, PSTR("Key %s missing"), keys[slot].eep.key.name, slot);
 	} else {
 		lcd_printfP(0, PSTR("Pizza %d done"), slot - MAX_KEYS + 1);
 	}
@@ -253,6 +253,9 @@ void ui_poll(void)
 		count_ui_timer();
 		break;
 	}
+  if (event >= EV_KEY_CHANGE0 && event < EV_KEY_CHANGE0 + MAX_KEYS) {
+    key_change(event);
+  }
 
 	if (event != EV_TICK && event < EV_KEY_CHANGE0) {
 		enable_lcd_backlight();

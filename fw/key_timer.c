@@ -5,6 +5,8 @@
 #include "lcd_drv.h"
 #include "common.h"
 #include "key_timer.h"
+#include "key.h"
+#include "config.h"
 
 // the key-timers.
 int keyTimers[MAX_KEYS + NUM_PIZZA_TIMERS];
@@ -49,7 +51,7 @@ void key_smaul() {
 
   expired_key = 0;
   beeper_stop();
-  smaul_stop();
+  smaul_off();
 }
 
 void key_timer() {
@@ -71,8 +73,46 @@ void setKeyTimeout(int key, int time) {
     return;
   } 
 
-  // TODO: find out which key is missing and 
+  keyTimers[key] = time;
 }
+
+void key_change(uint8_t slot) {
+  int i, j;
+
+  // current keyboard state: keys[]
+  // current keyboard configuration: config.keys[]
+
+  // CASE 1: A key defined in the config is not in the keyboard
+  for (i = 0; i < MAX_KEYS; i++) {
+    // if the key is not plugged in, this keyboard?
+    if (config.keys[i].name[0] != '\0') {
+	    int keyIsPresent = 0;
+
+      // this key should be available. check if it is.
+      for (j = 0; j < MAX_KEYS; j++) {
+        if (keys[j].state == KS_VALID && keys[j].eep.key.id == config.keys[i].id) {
+          // key is present.
+          keyIsPresent = 1;
+          break;
+        }
+      }
+
+      // if the key is not present, check if we need an alarm.
+      if (keyIsPresent == 0 && keyTimers[i] == -1) {
+        // set a timer because the key vanished
+        setKeyTimeout(i, config.keys[i].dfl_timeout);
+      } else if (keyIsPresent == 1 && keyTimers[i] >= 0) {
+        // unset a timer because the key came back.
+        setKeyTimeout(i, -1);        
+        expired_key = 0;
+        beeper_stop();
+        smaul_off();
+      }
+    }
+  }
+
+
+} 
 
 static void print_time(int timeInSeconds, char *destination) {
 	if (timeInSeconds == -1) {
