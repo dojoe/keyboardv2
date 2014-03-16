@@ -149,7 +149,7 @@ static void menu_activate(void) {
 		break;
 
 	case UIS_MENU_BOOTLOADER:
-		lcd_printfP(1, PSTR("Obai! o/"));
+		lcd_printfP(1, PSTR("Obai! \\o/"));
 		call_bootloader();
 		break;
 
