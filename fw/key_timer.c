@@ -104,6 +104,7 @@ void key_change(uint8_t slot) {
       } else if (keyIsPresent == 1 && keyTimers[i] >= 0) {
         // unset a timer because the key came back.
         setKeyTimeout(i, -1);        
+
         expired_key = 0;
         beeper_stop();
         smaul_off();
@@ -111,8 +112,32 @@ void key_change(uint8_t slot) {
     }
   }
 
+  // CASE 2: A key is present but it does not belong to the current keyboard.
+  for (i = 0; i < MAX_KEYS; i++) {
+    // if the key is plugged, check if it's in our config.
+    if (keys[i].state == KS_VALID) {
+      int keyBelongsToKeyboard = 0;
 
-} 
+      for (j = 0; j < MAX_KEYS; j++) {
+        if (keys[i].eep.key.id == config.keys[j].id) {
+          // this key is expected from our config.
+          keyBelongsToKeyboard = 1;
+          break;
+        }
+      }
+
+      // check if the key belongs to this keyboard... if not - warn
+      if (keyBelongsToKeyboard == 0) {
+        annoyPeopleForInvalidKey();
+      }
+    } else if (keys[i].state != KS_EMPTY) {
+      // there was some kind of error - we should do something about this... like annoy anyone close to the keyboard.
+      annoyPeopleForInvalidKey();
+    }
+  }
+}
+
+
 
 static void print_time(int timeInSeconds, char *destination) {
 	if (timeInSeconds == -1) {
