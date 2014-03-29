@@ -72,7 +72,9 @@ static void show_keys(char *argv[])
 	uint8_t i;
 	for (i = 0; i < MAX_KEYS; i++) {
 		printf_P(PSTR("Position %d: "), i + 1);
-		if (keys[i].state == KS_EMPTY) {
+		if (keys[i].state == KS_UNKNOWN) {
+			printf_P(PSTR("ZOMG BUG!!!1one\n"));
+		} else if (keys[i].state == KS_EMPTY) {
 			printf_P(PSTR("No key plugged\n"));
 		} else if (keys[i].state == KS_READ_ERROR) {
 			printf_P(PSTR("Read error\n"));

@@ -28,6 +28,7 @@ struct key_eeprom_data {
 } __attribute__((packed));
 
 enum key_state {
+	KS_UNKNOWN = 0,
 	KS_EMPTY,
 	KS_READ_ERROR,
 	KS_CRC_ERROR,

@@ -101,6 +101,11 @@ void key_change(void)
 	// current keyboard state: keys[]
 	// current keyboard configuration: config.keys[]
 
+	// Check that we passed the initial phase where we're not sure about the state of our keys.
+	for (i = 0; i < MAX_KEYS; i++)
+		if (keys[i].state == KS_UNKNOWN)
+			return;
+
 	// CASE 1: A key defined in the config is not in the keyboard
 	for (i = 0; i < MAX_KEYS; i++) {
 		// if the key is not plugged in, this keyboard?
