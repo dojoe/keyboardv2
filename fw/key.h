@@ -35,7 +35,7 @@ enum key_state {
 };
 
 struct key_socket {
-	uint8_t state;
+	uint8_t state, new_state, new_state_debounce;
 	struct key_eeprom_data eep;
 };
 

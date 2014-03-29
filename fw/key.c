@@ -57,9 +57,18 @@ static void key_disable_and_next(void)
 
 static void set_key_state(uint8_t state)
 {
-	if (keys[current_key].state != state) {
-		push_event(EV_KEY_CHANGE);
-		keys[current_key].state = state;
+	struct key_socket *k = keys + current_key;
+
+	if (k->state != state) {
+		if (k->new_state != state) {
+			k->new_state = state;
+			k->new_state_debounce = 2;
+		} else {
+			if (!(--k->new_state_debounce)) {
+				push_event(EV_KEY_CHANGE);
+				k->state = state;
+			}
+		}
 	}
 }
 
