@@ -6,6 +6,7 @@
 #include "key_timer.h"
 #include "key.h"
 #include "config.h"
+#include "ui.h"
 
 // the key-timers.
 int16_t keyTimers[MAX_KEYS + NUM_PIZZA_TIMERS];
@@ -28,6 +29,8 @@ static void key_timer_expired(uint8_t slot)
 		beeper_start(BEEP_KEYMISSING);
 	}
 
+	ui_to_idle();
+	enable_lcd_backlight();
 	smaul_pulse(250);
 	expired_key = slot + 1;
 }
@@ -96,27 +99,27 @@ void annoyPeopleForInvalidKey(void)
 
 void key_change(void)
 {
-	uint8_t i, j;
+	uint8_t config_idx, slot_idx;
 
 	// current keyboard state: keys[]
 	// current keyboard configuration: config.keys[]
 
 	// Check that we passed the initial phase where we're not sure about the state of our keys.
-	for (i = 0; i < MAX_KEYS; i++)
-		if (keys[i].state == KS_UNKNOWN)
+	for (slot_idx = 0; slot_idx < MAX_KEYS; slot_idx++)
+		if (keys[slot_idx].state == KS_UNKNOWN)
 			return;
 
 	// CASE 1: A key defined in the config is not in the keyboard
-	for (i = 0; i < MAX_KEYS; i++) {
+	for (config_idx = 0; config_idx < MAX_KEYS; config_idx++) {
 		// if the key is not plugged in, this keyboard?
-		if (config.keys[i].id) {
+		if (config.keys[config_idx].id) {
 			uint8_t keyIsPresent = 0;
 
 			// this key should be available. check if it is.
-			for (j = 0; j < MAX_KEYS; j++) {
-				if (keys[j].state == KS_VALID
-						&& keys[j].eep.key.id == config.keys[i].id
-						&& keys[j].eep.kb.id == config.kb.id) {
+			for (slot_idx = 0; slot_idx < MAX_KEYS; slot_idx++) {
+				if (keys[slot_idx].state == KS_VALID
+						&& keys[slot_idx].eep.key.id == config.keys[config_idx].id
+						&& keys[slot_idx].eep.kb.id == config.kb.id) {
 					// key is present.
 					keyIsPresent = 1;
 					break;
@@ -124,27 +127,32 @@ void key_change(void)
 			}
 
 			// if the key is not present, check if we need an alarm.
-			if (keyIsPresent == 0 && keyTimers[i] == -1) {
+			if (keyIsPresent == 0 && keyTimers[config_idx] == -1) {
 				// set a timer because the key vanished
-				setKeyTimeout(i, config.keys[i].dfl_timeout);
+				struct key_info *k = config.keys + config_idx;
+				setKeyTimeout(config_idx, k->dfl_timeout);
 				if (!expired_key)
 					beeper_start(BEEP_SINGLE);
-			} else if (keyIsPresent == 1 && keyTimers[i] >= 0) {
+				lcd_printfP(0, PSTR("Obai, %s key o/"), k->name);
+				ui_select_time(config_idx, k->dfl_timeout, k->max_timeout);
+			} else if (keyIsPresent == 1 && keyTimers[config_idx] >= 0) {
 				// unset a timer because the key came back.
-				setKeyTimeout(i, -1);
+				setKeyTimeout(config_idx, -1);
+				ui_to_idle();
+				lcd_printfP(0, PSTR("Ohai, %s key \\o"), config.keys[config_idx].name);
 				find_next_expired_timer(BEEP_SINGLE);
 			}
 		}
 	}
 
 	// CASE 2: A key is present but it does not belong to the current keyboard.
-	for (i = 0; i < MAX_KEYS; i++) {
+	for (slot_idx = 0; slot_idx < MAX_KEYS; slot_idx++) {
 		// if the key is plugged, check if it's in our config.
-		if (keys[i].state == KS_VALID) {
+		if (keys[slot_idx].state == KS_VALID) {
 			int keyBelongsToKeyboard = 0;
 
-			for (j = 0; j < MAX_KEYS; j++) {
-				if (keys[i].eep.key.id == config.keys[j].id) {
+			for (config_idx = 0; config_idx < MAX_KEYS; config_idx++) {
+				if (keys[slot_idx].eep.key.id == config.keys[config_idx].id) {
 					// this key is expected from our config.
 					keyBelongsToKeyboard = 1;
 					break;
@@ -155,7 +163,7 @@ void key_change(void)
 			if (keyBelongsToKeyboard == 0) {
 				annoyPeopleForInvalidKey();
 			}
-		} else if (keys[i].state != KS_EMPTY) {
+		} else if (keys[slot_idx].state != KS_EMPTY) {
 			// there was some kind of error - we should do something about this... like annoy anyone close to the keyboard.
 			annoyPeopleForInvalidKey();
 		}

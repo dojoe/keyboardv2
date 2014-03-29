@@ -12,7 +12,8 @@
 
 uint8_t  ui_state = UIS_IDLE;
 uint8_t  selected_key = 0;
-uint16_t selected_time = 0;
+uint16_t selected_time;
+uint16_t max_selectable_time;
 uint8_t  ui_timer = 0;
 uint8_t  last_expired_key = 0;
 
@@ -31,7 +32,7 @@ static void print_missing_key(void) {
 	}
 }
 
-static void menu_repaint(void) {
+static void ui_repaint(void) {
 	uint8_t n;
 
 	switch (ui_state) {
@@ -104,9 +105,12 @@ static void menu_enter(void) {
 	lcd_printfP(1, PSTR(""));
 }
 
-static void ui_to_idle(void) {
+void ui_to_idle(void) {
+	if (ui_state == UIS_FIND_KEY)
+		keyleds_off();
+
 	ui_state = UIS_IDLE;
-	keyleds_off();
+	lcd_printfP(0, PSTR(""));
 }
 
 static void apply_timer(void) {
@@ -141,9 +145,7 @@ static void menu_activate(void) {
 			pizzatimer_clear(n);
 			ui_to_idle();
 		} else {
-			selected_time = PIZZA_TIMER_DEFAULT_TIME;
-			selected_key = KEY_ID_PIZZATIMER_OFFSET + n;
-			ui_state = UIS_SELECT_TIME;
+			ui_select_time(KEY_ID_PIZZATIMER_OFFSET + n, PIZZA_TIMER_DEFAULT_TIME, PIZZA_TIMER_MAX_TIME);
 		}
 		break;
 
@@ -180,7 +182,7 @@ static void menu_button_forward(void) {
 		break;
 
 	case UIS_SELECT_TIME:
-		selected_time = min(99*60, selected_time+60);
+		selected_time = min(max_selectable_time, selected_time+60);
 		break;
 
 	case UIS_FIND_KEY:
@@ -265,7 +267,18 @@ void ui_poll(void)
 		reset_ui_timer();
 	}
 
-	menu_repaint();
+	ui_repaint();
+}
+
+void ui_select_time(uint8_t timer_id, int16_t default_time, int16_t max_time)
+{
+	selected_time = default_time;
+	max_selectable_time = max_time;
+	selected_key = timer_id;
+	ui_state = UIS_SELECT_TIME;
+	enable_lcd_backlight();
+	reset_ui_timer();
+	ui_repaint();
 }
 
 void ui_init(void)

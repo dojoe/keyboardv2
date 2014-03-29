@@ -3,7 +3,8 @@
 
 #define MENU_TIMEOUT_SECONDS		          30
 #define MENU_TIMEOUT_SELECT_SECONDS	      15
-#define PIZZA_TIMER_DEFAULT_TIME         300
+#define PIZZA_TIMER_DEFAULT_TIME         (5 * 60)
+#define PIZZA_TIMER_MAX_TIME             (90 * 60)
 
 enum menu_state {
 	UIS_IDLE = 0,
@@ -14,7 +15,6 @@ enum menu_state {
 	UIS_MENU_BOOTLOADER,
 	UIS_SELECT_TIME,
 	UIS_FIND_KEY,
-	UIS_KEY_ERROR,
 };
 
 #endif /* MENU_DEFS_H_ */
