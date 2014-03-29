@@ -177,7 +177,7 @@ static void menu_button_forward(void) {
 		break;
 
 	case UIS_SELECT_TIME:
-		selected_time = max(60, selected_time+60);
+		selected_time = min(99*60, selected_time+60);
 		break;
 
 	case UIS_FIND_KEY:
@@ -203,7 +203,7 @@ static void menu_button_back(void) {
 		break;
 
 	case UIS_SELECT_TIME:
-		selected_time = min(99*60, selected_time-60);
+		selected_time = max(60, selected_time-60);
 		break;
 
 	case UIS_FIND_KEY:

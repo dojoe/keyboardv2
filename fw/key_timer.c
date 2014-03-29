@@ -137,7 +137,9 @@ void key_change(uint8_t slot) {
   }
 }
 
+void annoyPeopleForInvalidKey() {
 
+}
 
 static void print_time(int timeInSeconds, char *destination) {
 	if (timeInSeconds == -1) {
