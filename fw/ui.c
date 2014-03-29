@@ -7,13 +7,13 @@
 #include "panel.h"
 #include "ui.h"
 #include "key.h"
+#include "key_timer.h"
+#include "config.h"
 
 uint8_t  ui_state = UIS_IDLE;
 uint8_t  selected_key = 0;
 uint16_t selected_time = 0;
 uint8_t  ui_timer = 0;
-
-extern uint8_t expired_key;
 
 static void print_missing_key(void) {
 	uint8_t slot = expired_key - 1;
@@ -21,7 +21,7 @@ static void print_missing_key(void) {
 	if (!expired_key) {
 		lcd_printfP(0, PSTR(""));
 	} else if (slot < MAX_KEYS) {
-		lcd_printfP(0, PSTR("Key %s missing"), keys[slot].eep.key.name, slot);
+		lcd_printfP(0, PSTR("Key %s missing"), config.keys[slot].name);
 	} else {
 		lcd_printfP(0, PSTR("Pizza %d done"), slot - MAX_KEYS + 1);
 	}
@@ -33,7 +33,7 @@ static void menu_repaint(void) {
 	switch (ui_state) {
 	case UIS_IDLE:
 		print_missing_key();
-		keytimer_displayupdate();
+		keytimer_display_update();
 		break;
 
 	case UIS_MENU_PIZZA1:
@@ -252,12 +252,12 @@ void ui_poll(void)
 		key_timer();
 		count_ui_timer();
 		break;
+	case EV_KEY_CHANGE:
+		key_change();
+		break;
 	}
-  if (event >= EV_KEY_CHANGE0 && event < EV_KEY_CHANGE0 + MAX_KEYS) {
-    key_change(event);
-  }
 
-	if (event != EV_TICK && event < EV_KEY_CHANGE0) {
+	if (event != EV_TICK && event != EV_KEY_CHANGE) {
 		enable_lcd_backlight();
 		reset_ui_timer();
 	}

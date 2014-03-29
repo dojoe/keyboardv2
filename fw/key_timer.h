@@ -6,9 +6,15 @@
 #ifndef KEY_TIMER_H_
 #define KEY_TIMER_H_
 
-#define SCHLUESSELTIMER_STATE_IDLE	0
+extern uint8_t expired_key;
 
 void initTimers(void);
-void key_change(uint8_t slot);
+void key_change(void);
+void keytimer_display_update(void);
+uint8_t pizzatimer_running(uint8_t n);
+void setKeyTimeout(uint8_t key, int16_t time);
+void pizzatimer_clear(uint8_t n);
+void key_smaul(void);
+void key_timer(void);
 
 #endif /* KEY_TIMER_H_ */

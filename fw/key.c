@@ -58,7 +58,7 @@ static void key_disable_and_next(void)
 static void set_key_state(uint8_t state)
 {
 	if (keys[current_key].state != state) {
-		push_event(EV_KEY_CHANGE0 + current_key);
+		push_event(EV_KEY_CHANGE);
 		keys[current_key].state = state;
 	}
 }
