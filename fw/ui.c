@@ -14,16 +14,20 @@ uint8_t  ui_state = UIS_IDLE;
 uint8_t  selected_key = 0;
 uint16_t selected_time = 0;
 uint8_t  ui_timer = 0;
+uint8_t  last_expired_key = 0;
 
 static void print_missing_key(void) {
 	uint8_t slot = expired_key - 1;
 
-	if (!expired_key) {
-		lcd_printfP(0, PSTR(""));
-	} else if (slot < MAX_KEYS) {
-		lcd_printfP(0, PSTR("Key %s missing"), config.keys[slot].name);
-	} else {
-		lcd_printfP(0, PSTR("Pizza %d done"), slot - MAX_KEYS + 1);
+	if (expired_key != last_expired_key) {
+		last_expired_key = expired_key;
+		if (!expired_key) {
+			lcd_printfP(0, PSTR(""));
+		} else if (slot < MAX_KEYS) {
+			lcd_printfP(0, PSTR("Key %s missing"), config.keys[slot].name);
+		} else {
+			lcd_printfP(0, PSTR("Pizza %d done"), slot - MAX_KEYS + 1);
+		}
 	}
 }
 
@@ -149,7 +153,6 @@ static void menu_activate(void) {
 		break;
 
 	case UIS_MENU_BOOTLOADER:
-		lcd_printfP(1, PSTR("Obai! \\o/"));
 		call_bootloader();
 		break;
 
