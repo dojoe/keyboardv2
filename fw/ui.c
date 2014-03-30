@@ -18,60 +18,118 @@ uint8_t ui_timer = 0;
 uint8_t expired_timer;
 uint8_t error_slot;
 
-
-/**
- * helper to check what time the minimum key has, does not include pizza timers.
- */
-static int16_t getMinimumKeyTimer(void)
+static int16_t getMinimumTimer(uint8_t limit)
 {
 	uint8_t i;
 	int16_t min = INT16_MAX;
 
-	for (i = 0; i < MAX_KEYS; i++)
+	for (i = 0; i < limit; i++)
 		if (keyTimers[i] >= 0 && keyTimers[i] < min)
 			min = keyTimers[i];
 
 	return (min == INT16_MAX) ? -1 : min;
 }
 
-static int16_t print_time(int16_t timeInSeconds, int16_t previousMinimum)
+static void print_time(int16_t timeInSeconds)
 {
 	if (timeInSeconds == -1) {
 		lcd_print_update_P(1, PSTR("--- "));
-		return previousMinimum;
+	} else if (timeInSeconds < 60) {
+		// print <timeInSeconds>s
+		lcd_print_update_P(1, PSTR("%2ds "), timeInSeconds);
 	} else {
-		if (timeInSeconds < 60) {
-			// print <timeInSeconds>s
-			lcd_print_update_P(1, PSTR("%2ds "), timeInSeconds);
-		} else {
-			// print <timeInSeconds / 60>m
-			lcd_print_update_P(1, PSTR("%2dm "), timeInSeconds / 60);
-		}
-		return (previousMinimum == -1) ? timeInSeconds : min(timeInSeconds, previousMinimum);
+		// print <timeInSeconds / 60>m
+		lcd_print_update_P(1, PSTR("%2dm "), timeInSeconds / 60);
+	}
+}
+
+/*
+ * The pulsation frequency of the Smaul button LED depends on how soon the Keyboard will
+ * start to throw a fit. As frequency is not perceived linearly, but rather logarithmically
+ * (see audio frequencies), we want to double the frequency roughly every time unit, but
+ * preferably we want to go slower in the beginning and go faster the closer to the alarm we
+ * get. So let's choose
+ *   freq = 2^y  with  y = a*(x^2) + b  and  x = t0 - t
+ *   and a, b chosen such that  freq(0) = 200  and  freq(t0) = 6
+ *
+ * 2^b = 6 <=> b = log2(6)
+ * 2^(a*t0^2 + b) = 200 <=> a = (log2(200) - log(6)) / (t0^2)
+ *
+ * We avoid floating point math in the uC by generating a small table for these values
+ * and interpolating between them.
+ */
+
+#if 0
+/* Generate a table of pulsation frequencies */
+#include <stdio.h>
+#include <math.h>
+
+const double t0 = 180.0;
+const double f0 = 6.0;
+const double f1 = 200.0;
+
+const int INTERP_FACTOR = 8;
+
+double log2(double x)
+{
+	return log(x) / log(2);
+}
+
+int main(void)
+{
+	int i;
+	double x, y, a, b;
+	int TABLE_SIZE = (int)t0 / INTERP_FACTOR;
+
+	b = log2(f0);
+	a = (log2(f1) - log2(f0)) / (t0 * t0);
+
+	for (i = 0; i < TABLE_SIZE; i++) {
+		x = (1.0 - (double)i / (double)(TABLE_SIZE - 1)) * t0;
+		y = pow(2, a * x * x + b);
+		printf("%i, ", (int)floor(y + 0.5));
+	}
+	return 0;
+}
+#endif
+
+#define INTERP_LOG    3
+#define INTERP_FACTOR (1 << INTERP_LOG)
+
+static const PROGMEM uint8_t smaul_freq[] = {
+		200, 144, 106, 79, 60, 46, 36, 29, 23, 19, 16, 13, 11, 10, 9, 8, 7, 7,
+};
+
+void smaul_pulse_update(void)
+{
+	int16_t min;
+
+	/* Don't do anything if we have an expired timer or key error */
+	if (ui_flags)
+		return;
+
+	min = getMinimumTimer(MAX_KEYS + NUM_PIZZA_TIMERS);
+	if (min < 0) {
+		smaul_off();
+	} else if (min >= ((ARRAY_SIZE(smaul_freq) - 1) * INTERP_FACTOR)) {
+		smaul_pulse(6);
+	} else {
+		uint8_t part1 = min & (INTERP_FACTOR - 1);
+		uint8_t part0 = INTERP_FACTOR - part1;
+		uint8_t idx = min >> INTERP_LOG;
+		smaul_pulse(((uint16_t)pgm_read_byte(smaul_freq + idx) * part0 +
+				     (uint16_t)pgm_read_byte(smaul_freq + idx + 1) * part1) >> INTERP_LOG);
 	}
 }
 
 void keytimer_display_update(void)
 {
-	int16_t min = -1;
-
 	lcd_print_start(1);
-	min = print_time(keyTimers[MAX_KEYS + 0], min);
-	min = print_time(keyTimers[MAX_KEYS + 1], min);
-	min = print_time(keyTimers[MAX_KEYS + 2], min);
-	min = print_time(getMinimumKeyTimer(), min);
+	print_time(keyTimers[MAX_KEYS + 0]);
+	print_time(keyTimers[MAX_KEYS + 1]);
+	print_time(keyTimers[MAX_KEYS + 2]);
+	print_time(getMinimumTimer(MAX_KEYS));
 	lcd_print_end(1);
-
-	if (!ui_flags) {
-		if (min < 0)
-			smaul_off();
-		else if (min < 90)
-			smaul_pulse(200 - ((min * 3) / 2));
-		else if (min < 300)
-			smaul_pulse(65 - (((min - 90) * 72) / 256));
-		else
-			smaul_pulse(6);
-	}
 }
 
 static void ui_repaint(void) {
@@ -371,6 +429,7 @@ void ui_poll(void)
 	case EV_TICK:
 		key_timer();
 		count_ui_timer();
+		smaul_pulse_update();
 		break;
 	case EV_KEY_CHANGE:
 		key_change();
