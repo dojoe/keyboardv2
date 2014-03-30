@@ -3,8 +3,8 @@
 
 #define MENU_TIMEOUT_SECONDS		          30
 #define MENU_TIMEOUT_SELECT_SECONDS	      15
-#define PIZZA_TIMER_DEFAULT_TIME         (5 * 60)
-#define PIZZA_TIMER_MAX_TIME             (90 * 60)
+#define PIZZA_TIMER_DEFAULT_TIME          5  /* minutes */
+#define PIZZA_TIMER_MAX_TIME              90 /* minutes */
 
 enum menu_state {
 	UIS_IDLE = 0,

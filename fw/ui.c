@@ -10,12 +10,12 @@
 #include "key_timer.h"
 #include "config.h"
 
-uint8_t  ui_state = UIS_IDLE;
-uint8_t  selected_key = 0;
-uint16_t selected_time;
-uint16_t max_selectable_time;
-uint8_t  ui_timer = 0;
-uint8_t  last_expired_key = 0;
+uint8_t ui_state = UIS_IDLE;
+uint8_t selected_key = 0;
+uint8_t selected_time;
+uint8_t max_selectable_time;
+uint8_t ui_timer = 0;
+uint8_t last_expired_key = 0;
 
 static void print_missing_key(void) {
 	uint8_t slot = expired_key - 1;
@@ -61,8 +61,7 @@ static void ui_repaint(void) {
 		break;
 
 	case UIS_SELECT_TIME:
-		lcd_printfP(1, PSTR("%02i:%02i"), selected_time / 60,
-				selected_time % 60);
+		lcd_printfP(1, PSTR("%02i minutes"), selected_time);
 		break;
 
 	case UIS_FIND_KEY:
@@ -182,7 +181,7 @@ static void menu_button_forward(void) {
 		break;
 
 	case UIS_SELECT_TIME:
-		selected_time = min(max_selectable_time, selected_time+60);
+		selected_time = min(max_selectable_time, selected_time + 1);
 		break;
 
 	case UIS_FIND_KEY:
@@ -208,7 +207,7 @@ static void menu_button_back(void) {
 		break;
 
 	case UIS_SELECT_TIME:
-		selected_time = max(60, selected_time-60);
+		selected_time = max(1, selected_time - 1);
 		break;
 
 	case UIS_FIND_KEY:
@@ -270,7 +269,7 @@ void ui_poll(void)
 	ui_repaint();
 }
 
-void ui_select_time(uint8_t timer_id, int16_t default_time, int16_t max_time)
+void ui_select_time(uint8_t timer_id, uint8_t default_time, uint8_t max_time)
 {
 	selected_time = default_time;
 	max_selectable_time = max_time;

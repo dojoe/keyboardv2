@@ -82,14 +82,24 @@ void key_timer(void)
 	}
 }
 
-void setKeyTimeout(uint8_t key, int16_t time)
+void setKeyTimeout(uint8_t key, uint8_t minutes)
 {
 	if (key >= KEY_ID_PIZZATIMER_OFFSET) {
-		keyTimers[MAX_KEYS + (key - KEY_ID_PIZZATIMER_OFFSET)] = time;
+		keyTimers[MAX_KEYS + (key - KEY_ID_PIZZATIMER_OFFSET)] = minutes * 60;
 		return;
 	}
 
-	keyTimers[key] = time;
+	keyTimers[key] = minutes * 60;
+}
+
+void clearKeyTimeout(uint8_t key)
+{
+	if (key >= KEY_ID_PIZZATIMER_OFFSET) {
+		keyTimers[MAX_KEYS + (key - KEY_ID_PIZZATIMER_OFFSET)] = -1;
+		return;
+	}
+
+	keyTimers[key] = -1;
 }
 
 void annoyPeopleForInvalidKey(void)
@@ -137,7 +147,7 @@ void key_change(void)
 				ui_select_time(config_idx, k->dfl_timeout, k->max_timeout);
 			} else if (keyIsPresent == 1 && keyTimers[config_idx] >= 0) {
 				// unset a timer because the key came back.
-				setKeyTimeout(config_idx, -1);
+				clearKeyTimeout(config_idx);
 				ui_to_idle();
 				lcd_printfP(0, PSTR("Ohai, %s key \\o"), config.keys[config_idx].name);
 				find_next_expired_timer(BEEP_SINGLE);
