@@ -16,7 +16,7 @@ void initTimers(void)
 {
 	uint8_t i;
 
-	for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
+	for (i = 0; i < ARRAY_SIZE(keyTimers); i++) {
 		keyTimers[i] = -1;
 	}
 }
@@ -29,27 +29,25 @@ static void key_timer_expired(uint8_t slot)
 		beeper_start(BEEP_KEYMISSING);
 	}
 
-	ui_to_idle();
 	enable_lcd_backlight();
 	smaul_pulse(250);
 	expired_key = slot + 1;
+	ui_to_idle();
 }
 
-static void find_next_expired_timer(uint8_t beep_code_if_none)
+static uint8_t has_next_expired_timer(void)
 {
 	uint8_t i;
 
 	// check if there's another key that needs handling.
-	for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
+	for (i = 0; i < ARRAY_SIZE(keyTimers); i++) {
 		if (keyTimers[i] == 0) {
 			key_timer_expired(i);
-			return;
+			return 1;
 		}
 	}
 
-	expired_key = 0;
-	beeper_start(beep_code_if_none);
-	smaul_off();
+	return 0;
 }
 
 void key_smaul(void)
@@ -57,7 +55,7 @@ void key_smaul(void)
 	uint8_t i;
 
 	// is there a key missing?
-	for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
+	for (i = 0; i < ARRAY_SIZE(keyTimers); i++) {
 		if (keyTimers[i] == 0) {
 			// clear the first key timer -> set + 5 Minutes.
 			keyTimers[i] = 300;
@@ -65,14 +63,19 @@ void key_smaul(void)
 		}
 	}
 
-	find_next_expired_timer(BEEP_OFF);
+	if (!has_next_expired_timer()) {
+		expired_key = 0;
+		beeper_stop();
+		smaul_off();
+		ui_to_idle();
+	}
 }
 
 void key_timer(void)
 {
 	uint8_t i;
 
-	for (i = 0; i < MAX_KEYS + NUM_PIZZA_TIMERS; i++) {
+	for (i = 0; i < ARRAY_SIZE(keyTimers); i++) {
 		if (keyTimers[i] > 0) {
 			keyTimers[i]--;
 			if (keyTimers[i] == 0) {
@@ -80,26 +83,6 @@ void key_timer(void)
 			}
 		}
 	}
-}
-
-void setKeyTimeout(uint8_t key, uint8_t minutes)
-{
-	if (key >= KEY_ID_PIZZATIMER_OFFSET) {
-		keyTimers[MAX_KEYS + (key - KEY_ID_PIZZATIMER_OFFSET)] = minutes * 60;
-		return;
-	}
-
-	keyTimers[key] = minutes * 60;
-}
-
-void clearKeyTimeout(uint8_t key)
-{
-	if (key >= KEY_ID_PIZZATIMER_OFFSET) {
-		keyTimers[MAX_KEYS + (key - KEY_ID_PIZZATIMER_OFFSET)] = -1;
-		return;
-	}
-
-	keyTimers[key] = -1;
 }
 
 void annoyPeopleForInvalidKey(void)
@@ -148,9 +131,14 @@ void key_change(void)
 			} else if (keyIsPresent == 1 && keyTimers[config_idx] >= 0) {
 				// unset a timer because the key came back.
 				clearKeyTimeout(config_idx);
-				ui_to_idle();
-				lcd_printfP(0, PSTR("Ohai, %s key \\o"), config.keys[config_idx].name);
-				find_next_expired_timer(BEEP_SINGLE);
+
+				if (!has_next_expired_timer()) {
+					expired_key = 0;
+					beeper_start(BEEP_SINGLE);
+					smaul_off();
+					lcd_printfP(0, PSTR("Ohai, %s key =D"), config.keys[config_idx].name);
+					ui_short_message();
+				}
 			}
 		}
 	}
@@ -190,29 +178,6 @@ static void print_time(int16_t timeInSeconds)
 	} else {
 		// print <timeInSeconds / 60>m
 		lcd_print_update_P(1, PSTR("%2dm "), timeInSeconds / 60);
-	}
-}
-
-/** 
- * helper to check if a pizza timer is running
- * @param n pizza timer number, must be between 0 and MAX_KEYS
- */
-uint8_t pizzatimer_running(uint8_t n)
-{
-	if (n < 0 || n >= NUM_PIZZA_TIMERS) {
-		return 0;
-	}
-
-	return keyTimers[MAX_KEYS + n] != -1;
-}
-
-/** 
- * helper to clear a pizza timer.
- */
-void pizzatimer_clear(uint8_t n)
-{
-	if (n >= 0 && n < NUM_PIZZA_TIMERS) {
-		keyTimers[MAX_KEYS + n] = -1;
 	}
 }
 

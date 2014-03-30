@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "hw.h"
 #include "lcd_drv.h"
-#include "menu-defs.h"
 #include "common.h"
 #include "panel.h"
 #include "ui.h"
@@ -15,20 +14,16 @@ uint8_t selected_key = 0;
 uint8_t selected_time;
 uint8_t max_selectable_time;
 uint8_t ui_timer = 0;
-uint8_t last_expired_key = 0;
 
 static void print_missing_key(void) {
 	uint8_t slot = expired_key - 1;
 
-	if (expired_key != last_expired_key) {
-		last_expired_key = expired_key;
-		if (!expired_key) {
-			lcd_printfP(0, PSTR(""));
-		} else if (slot < MAX_KEYS) {
-			lcd_printfP(0, PSTR("Key %s missing"), config.keys[slot].name);
-		} else {
-			lcd_printfP(0, PSTR("Pizza %d done"), slot - MAX_KEYS + 1);
-		}
+	if (!expired_key) {
+		lcd_printfP(0, PSTR(""));
+	} else if (slot < MAX_KEYS) {
+		lcd_printfP(0, PSTR("Key %s missing"), config.keys[slot].name);
+	} else {
+		lcd_printfP(0, PSTR("Pizza %d done"), slot - MAX_KEYS + 1);
 	}
 }
 
@@ -37,7 +32,8 @@ static void ui_repaint(void) {
 
 	switch (ui_state) {
 	case UIS_IDLE:
-		print_missing_key();
+	case UIS_MESSAGE_TIMEOUT:
+	case UIS_KEY_ERROR:
 		keytimer_display_update();
 		break;
 
@@ -92,6 +88,10 @@ static void reset_ui_timer(void) {
 		ui_timer = MENU_TIMEOUT_SELECT_SECONDS;
 		break;
 
+	case UIS_MESSAGE_TIMEOUT:
+		ui_timer = UI_MESSAGE_TIMEOUT_SECONDS;
+		break;
+
 	default:
 		ui_timer = 0;
 		break;
@@ -109,7 +109,17 @@ void ui_to_idle(void) {
 		keyleds_off();
 
 	ui_state = UIS_IDLE;
-	lcd_printfP(0, PSTR(""));
+	print_missing_key();
+}
+
+void ui_message(uint8_t dest_state)
+{
+	if (ui_state == UIS_FIND_KEY)
+		keyleds_off();
+
+	ui_state = dest_state;
+	enable_lcd_backlight();
+	reset_ui_timer();
 }
 
 static void apply_timer(void) {
@@ -133,6 +143,7 @@ static void menu_activate(void) {
 	switch (ui_state) {
 	// enable the menu;
 	case UIS_IDLE:
+	case UIS_MESSAGE_TIMEOUT:
 		menu_enter();
 		break;
 
@@ -144,7 +155,7 @@ static void menu_activate(void) {
 			pizzatimer_clear(n);
 			ui_to_idle();
 		} else {
-			ui_select_time(KEY_ID_PIZZATIMER_OFFSET + n, PIZZA_TIMER_DEFAULT_TIME, PIZZA_TIMER_MAX_TIME);
+			ui_select_time(MAX_KEYS + n, PIZZA_TIMER_DEFAULT_TIME, PIZZA_TIMER_MAX_TIME);
 		}
 		break;
 
@@ -271,6 +282,9 @@ void ui_poll(void)
 
 void ui_select_time(uint8_t timer_id, uint8_t default_time, uint8_t max_time)
 {
+	if (ui_state == UIS_FIND_KEY)
+		keyleds_off();
+
 	selected_time = default_time;
 	max_selectable_time = max_time;
 	selected_key = timer_id;
