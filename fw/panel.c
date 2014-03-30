@@ -329,13 +329,14 @@ void keyleds_off(void)
 #define LCD_WIDTH 16
 #define MAX_LCD_LINE 80
 #define SCROLL_NUM_SPACES 3
+#define SCROLL_SPEED 3
+#define SCROLL_DELAY 2
 
 static volatile uint8_t lcd_writing = 0;
-static uint8_t lcd_changed = 0;
 static volatile uint8_t lcd_needs_update = 0;
 struct lcd_line {
 	char text[MAX_LCD_LINE + SCROLL_NUM_SPACES + LCD_WIDTH];
-	uint8_t len, pos;
+	uint8_t len, pos, delay;
 };
 static struct lcd_line lcd_lines[2];
 
@@ -363,6 +364,7 @@ void lcd_print_end(uint8_t line)
 	struct lcd_line *l = lcd_lines + line;
 
 	l->pos = 0;
+	l->delay = SCROLL_DELAY;
 	if (l->len > LCD_WIDTH) {
 		memset(l->text + l->len, ' ', SCROLL_NUM_SPACES);
 		l->len += SCROLL_NUM_SPACES;
@@ -374,7 +376,7 @@ void lcd_print_end(uint8_t line)
 	}
 
 	lcd_writing = 0;
-	lcd_changed = 1;
+	lcd_needs_update = 1;
 }
 
 void lcd_printfP(uint8_t line, const char *fmt, ...)
@@ -388,31 +390,39 @@ void lcd_printfP(uint8_t line, const char *fmt, ...)
 	lcd_print_end(line);
 }
 
-static void lcd_update(void)
+static void lcd_scroll(void)
 {
 	struct lcd_line *line;
-	uint8_t i;
 
-	lcd_xy(0, 0);
-	lcd_changed = 0;
 	for (line = lcd_lines; line < (lcd_lines + ARRAY_SIZE(lcd_lines)); line++) {
-		for (i = 0; i < LCD_WIDTH; i++)
-			lcd_putchar(line->text[line->pos + i]);
-
 		if (line->len > LCD_WIDTH) {
-			if (line->pos >= line->len - 1)
-				line->pos = 0;
-			else
-				line->pos++;
-			lcd_changed = 1;
+			if (line->delay) {
+				line->delay--;
+				continue;
+			}
+
+			line->pos += SCROLL_SPEED;
+			if (line->pos >= line->len)
+				line->pos -= line->len;
+			lcd_needs_update = 1;
 		}
 	}
 }
 
 void lcd_poll(void)
 {
-	if (lcd_needs_update)
-		lcd_update();
+	struct lcd_line *line;
+	uint8_t i;
+
+	if (!lcd_needs_update)
+		return;
+
+	lcd_xy(0, 0);
+	for (line = lcd_lines; line < (lcd_lines + ARRAY_SIZE(lcd_lines)); line++) {
+		for (i = 0; i < LCD_WIDTH; i++)
+			lcd_putchar(line->text[line->pos + i]);
+	}
+
 	lcd_needs_update = 0;
 }
 
@@ -430,8 +440,8 @@ ISR(TIMER3_OVF_vect)
 	if (!global_ms_timer) {
 		global_qs_timer++;
 		keyleds_update();
-		if (lcd_changed && !lcd_writing)
-			lcd_needs_update = 1;
+		if ((global_qs_timer & 1) == 0 && !lcd_writing)
+			lcd_scroll();
 		if ((global_qs_timer & 3) == 0) {
 			push_event(EV_TICK);
 			if (lcd_led_timer && !(--lcd_led_timer))
