@@ -11,7 +11,6 @@ extern int16_t keyTimers[MAX_KEYS + NUM_PIZZA_TIMERS];
 
 void initTimers(void);
 void key_change(void);
-void keytimer_display_update(void);
 void key_smaul(void);
 void key_timer(void);
 

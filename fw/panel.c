@@ -183,7 +183,7 @@ volatile uint8_t global_ms_timer;
 volatile uint8_t global_qs_timer;
 
 static uint8_t lcd_led_brightness = LCD_LED_DIM;
-static uint8_t smaul_led_osc = 0;
+static uint16_t smaul_led_osc = 0;
 static volatile uint8_t lcd_led_state = LCD_NONE;
 static volatile uint8_t lcd_led_timer = 0;
 static volatile uint8_t smaul_led_state = SMAUL_OFF;
@@ -247,10 +247,10 @@ static void pwmled_update(void)
 	if (smaul_led_state_copy != SMAUL_OFF) {
 		smaul_led_osc += smaul_led_frequency;
 		if (smaul_led_state_copy == SMAUL_BLINK) {
-			set_smaul_led((smaul_led_osc & 128) ? 255 : 0);
+			set_smaul_led((smaul_led_osc & 2048) ? 255 : 0);
 		} else {
-			uint8_t brightness = (smaul_led_osc >> 1) & 63;
-			set_smaul_led((smaul_led_osc & 128) ? pgm_read_byte(gamma + brightness) :
+			uint8_t brightness = (smaul_led_osc >> 5) & 63;
+			set_smaul_led((smaul_led_osc & 2048) ? pgm_read_byte(gamma + brightness) :
 					pgm_read_byte(gamma + 63 - brightness));
 		}
 	}

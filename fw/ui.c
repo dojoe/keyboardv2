@@ -18,6 +18,62 @@ uint8_t ui_timer = 0;
 uint8_t expired_timer;
 uint8_t error_slot;
 
+
+/**
+ * helper to check what time the minimum key has, does not include pizza timers.
+ */
+static int16_t getMinimumKeyTimer(void)
+{
+	uint8_t i;
+	int16_t min = INT16_MAX;
+
+	for (i = 0; i < MAX_KEYS; i++)
+		if (keyTimers[i] >= 0 && keyTimers[i] < min)
+			min = keyTimers[i];
+
+	return (min == INT16_MAX) ? -1 : min;
+}
+
+static int16_t print_time(int16_t timeInSeconds, int16_t previousMinimum)
+{
+	if (timeInSeconds == -1) {
+		lcd_print_update_P(1, PSTR("--- "));
+		return previousMinimum;
+	} else {
+		if (timeInSeconds < 60) {
+			// print <timeInSeconds>s
+			lcd_print_update_P(1, PSTR("%2ds "), timeInSeconds);
+		} else {
+			// print <timeInSeconds / 60>m
+			lcd_print_update_P(1, PSTR("%2dm "), timeInSeconds / 60);
+		}
+		return (previousMinimum == -1) ? timeInSeconds : min(timeInSeconds, previousMinimum);
+	}
+}
+
+void keytimer_display_update(void)
+{
+	int16_t min = -1;
+
+	lcd_print_start(1);
+	min = print_time(keyTimers[MAX_KEYS + 0], min);
+	min = print_time(keyTimers[MAX_KEYS + 1], min);
+	min = print_time(keyTimers[MAX_KEYS + 2], min);
+	min = print_time(getMinimumKeyTimer(), min);
+	lcd_print_end(1);
+
+	if (!ui_flags) {
+		if (min < 0)
+			smaul_off();
+		else if (min < 90)
+			smaul_pulse(200 - ((min * 3) / 2));
+		else if (min < 300)
+			smaul_pulse(65 - (((min - 90) * 72) / 256));
+		else
+			smaul_pulse(6);
+	}
+}
+
 static void ui_repaint(void) {
 	uint8_t n;
 
@@ -99,7 +155,6 @@ static void ui_default_state(void) {
 		ui_state = UIS_KEY_ERROR;
 		keyled_blink(error_slot);
 		beeper_start(BEEP_ERROR);
-		smaul_blink(250);
 
 		switch (ui_flags & UIF_KEY_ERROR) {
 		case UIF_KEY_ERROR_READ_ERR:
@@ -118,7 +173,7 @@ static void ui_default_state(void) {
 		if (!(ui_flags & UIF_TIMER_EXPIRED)) {
 			lcd_printfP(0, PSTR(""));
 		} else {
-			smaul_blink(250);
+			smaul_blink(220);
 			if (expired_timer < MAX_KEYS) {
 				beeper_start(BEEP_KEYMISSING);
 				lcd_printfP(0, PSTR("Key %s missing"), config.keys[expired_timer].name);
