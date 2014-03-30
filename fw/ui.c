@@ -10,22 +10,13 @@
 #include "config.h"
 
 uint8_t ui_state = UIS_IDLE;
+uint8_t ui_flags = 0;
 uint8_t selected_key = 0;
 uint8_t selected_time;
 uint8_t max_selectable_time;
 uint8_t ui_timer = 0;
-
-static void print_missing_key(void) {
-	uint8_t slot = expired_key - 1;
-
-	if (!expired_key) {
-		lcd_printfP(0, PSTR(""));
-	} else if (slot < MAX_KEYS) {
-		lcd_printfP(0, PSTR("Key %s missing"), config.keys[slot].name);
-	} else {
-		lcd_printfP(0, PSTR("Pizza %d done"), slot - MAX_KEYS + 1);
-	}
-}
+uint8_t expired_timer;
+uint8_t error_slot;
 
 static void ui_repaint(void) {
 	uint8_t n;
@@ -98,18 +89,46 @@ static void reset_ui_timer(void) {
 	}
 }
 
-static void menu_enter(void) {
-	ui_state = UIS_MENU_FIND_KEY;
-	reset_ui_timer();
-	lcd_printfP(1, PSTR(""));
-}
+static void ui_default_state(void) {
+	keyleds_off();
+	beeper_stop();
+	smaul_off();
+	enable_lcd_backlight();
 
-void ui_to_idle(void) {
-	if (ui_state == UIS_FIND_KEY)
-		keyleds_off();
+	if (ui_flags & UIF_KEY_ERROR) {
+		ui_state = UIS_KEY_ERROR;
+		keyled_blink(error_slot);
+		beeper_start(BEEP_ERROR);
+		smaul_blink(250);
 
-	ui_state = UIS_IDLE;
-	print_missing_key();
+		switch (ui_flags & UIF_KEY_ERROR) {
+		case UIF_KEY_ERROR_READ_ERR:
+			lcd_printfP(0, PSTR("Read error in slot %d"), error_slot + 1);
+			break;
+		case UIF_KEY_ERROR_UNKNOWN:
+			lcd_printfP(0, PSTR("Unknown key %d (\"%s\")"), keys[error_slot].eep.key.id, keys[error_slot].eep.key.name);
+			break;
+		case UIF_KEY_ERROR_OTHER_KB:
+			lcd_printfP(0, PSTR("Invalid key; belongs to %s"), keys[error_slot].eep.kb.name);
+			break;
+		}
+	} else {
+		ui_state = UIS_IDLE;
+
+		if (!(ui_flags & UIF_TIMER_EXPIRED)) {
+			lcd_printfP(0, PSTR(""));
+		} else {
+			smaul_blink(250);
+			if (expired_timer < MAX_KEYS) {
+				beeper_start(BEEP_KEYMISSING);
+				lcd_printfP(0, PSTR("Key %s missing"), config.keys[expired_timer].name);
+			} else {
+				uint8_t n = expired_timer - MAX_KEYS;
+				beeper_start(BEEP_PIZZA1 + n);
+				lcd_printfP(0, PSTR("Pizza %d done"), n + 1);
+			}
+		}
+	}
 }
 
 void ui_message(uint8_t dest_state)
@@ -122,9 +141,35 @@ void ui_message(uint8_t dest_state)
 	reset_ui_timer();
 }
 
+void ui_set_timer_expired(uint8_t timer_idx)
+{
+	expired_timer = timer_idx;
+	ui_flags |= UIF_TIMER_EXPIRED;
+	ui_default_state();
+}
+
+void ui_clear_timer_expired(void)
+{
+	ui_flags &= ~UIF_TIMER_EXPIRED;
+	ui_default_state();
+}
+
+void ui_set_key_error(uint8_t error_type, uint8_t slot_idx)
+{
+	ui_flags |= error_type;
+	error_slot = slot_idx;
+	ui_default_state();
+}
+
+void ui_clear_key_error(void)
+{
+	ui_flags &= ~UIF_KEY_ERROR;
+	ui_default_state();
+}
+
 static void apply_timer(void) {
 	setKeyTimeout(selected_key, selected_time);
-	ui_to_idle();
+	ui_default_state();
 }
 
 static void count_ui_timer(void) {
@@ -132,7 +177,7 @@ static void count_ui_timer(void) {
 		if (ui_state == UIS_SELECT_TIME) {
 			apply_timer();
 		} else {
-			ui_to_idle();
+			ui_default_state();
 		}
 	}
 }
@@ -144,7 +189,9 @@ static void menu_activate(void) {
 	// enable the menu;
 	case UIS_IDLE:
 	case UIS_MESSAGE_TIMEOUT:
-		menu_enter();
+		ui_state = UIS_MENU_FIND_KEY;
+		reset_ui_timer();
+		lcd_printfP(1, PSTR(""));
 		break;
 
 	case UIS_MENU_PIZZA1:
@@ -153,7 +200,7 @@ static void menu_activate(void) {
 		n = ui_state - UIS_MENU_PIZZA1;
 		if (pizzatimer_running(n) != 0) {
 			pizzatimer_clear(n);
-			ui_to_idle();
+			ui_default_state();
 		} else {
 			ui_select_time(MAX_KEYS + n, PIZZA_TIMER_DEFAULT_TIME, PIZZA_TIMER_MAX_TIME);
 		}
@@ -173,7 +220,7 @@ static void menu_activate(void) {
 		break;
 
 	case UIS_FIND_KEY:
-		ui_to_idle();
+		ui_default_state();
 		break;
 	}
 }
@@ -235,8 +282,11 @@ static void menu_button_smaul(void) {
 	case UIS_IDLE:
 		key_smaul();
 		break;
+	case UIS_KEY_ERROR:
+		// ignore
+		break;
 	default:
-		ui_to_idle();
+		ui_default_state();
 		break;
 	}
 }

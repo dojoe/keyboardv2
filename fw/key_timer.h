@@ -17,7 +17,7 @@ void key_timer(void);
 
 static inline void setKeyTimeout(uint8_t key, uint8_t minutes)
 {
-	keyTimers[key] = minutes * 1;
+	keyTimers[key] = minutes * 60;
 }
 
 static inline void clearKeyTimeout(uint8_t key)
