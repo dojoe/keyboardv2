@@ -121,6 +121,7 @@ static void beeper_update(void)
 	local_state = beeper_state;
 	switch (local_state) {
 	case BEEP_OFF:
+	case BEEP_DISABLED:
 		break;
 	case BEEP_SINGLE:
 		if (beeper_tick == 5) {
@@ -155,11 +156,24 @@ static void beeper_update(void)
 
 void beeper_start(enum beep_patterns pattern)
 {
+	if (beeper_state == BEEP_DISABLED)
+		return;
+
 	beeper_state = pattern;
 	beeper_counter = BEEPER_TICK_LENGTH;
 	beeper_tick = 0;
 
 	beeper_set(pattern != BEEP_OFF);
+}
+
+void beeper_enable(uint8_t enable)
+{
+	if (enable) {
+		beeper_state = BEEP_OFF;
+	} else {
+		beeper_stop();
+		beeper_state = BEEP_DISABLED;
+	}
 }
 
 enum lcd_led_state {

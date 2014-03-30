@@ -36,12 +36,14 @@ enum beep_patterns {
 	BEEP_PIZZA1,
 	BEEP_PIZZA2,
 	BEEP_PIZZA3,
+	BEEP_DISABLED,
 };
 
 void beeper_start(uint8_t pattern);
 static inline void beeper_stop(void) {
 	beeper_start(BEEP_OFF);
 }
+void beeper_enable(uint8_t enable);
 
 #define LCD_LED_DIM  13
 #define LCD_LED_ON   255

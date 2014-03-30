@@ -41,6 +41,8 @@ program_key <position> <ID> <dfl timeout> <max timeout> <flags> <Name...>\n\
    flags - a combination of any of these letters:\n\
      B - Missing key causes keyboard to beep after timeout\n\
      R - Missing key causes rotating light to turn on occasionally\n\
+beeper on|off\n\
+   Enable or disable the beeper, so it doesn't annoy you while you program keys\n\
 boot\n\
    Jump into DFU bootloader for firmware update\n\
 \n\
@@ -65,6 +67,19 @@ static uint8_t check_kb_setup(void)
 static void boot(char *argv[])
 {
 	call_bootloader();
+}
+
+static void beeper(char *argv[])
+{
+	if (!strcmp_P(argv[1], PSTR("off"))) {
+		beeper_enable(0);
+		ok();
+	} else if (!strcmp_P(argv[1], PSTR("on"))) {
+		beeper_enable(1);
+		ok();
+	} else {
+		printf_P(PSTR("What?\n"));
+	}
 }
 
 static void show_keys(char *argv[])
@@ -287,6 +302,7 @@ static const PROGMEM struct cmd_def commands[] = {
 		{ "help",         help, 0 },
 		{ "?",            help, 0 },
 		{ "boot",         boot, 0 },
+		{ "beeper",       beeper, 1 },
 		{ "show_keys",    show_keys, 0 },
 		{ "show_config",  show_config, 0 },
 		{ "set_keyboard", set_keyboard, 2 },
