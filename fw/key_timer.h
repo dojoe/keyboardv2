@@ -23,7 +23,7 @@ uint8_t clearKeyTimeout(uint8_t key);
 
 static inline uint8_t isKeyTimerRunning(uint8_t key)
 {
-	return (keyTimers[key] != -1);
+	return (keyTimers[key] >= 0);
 }
 
 /**

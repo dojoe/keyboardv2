@@ -32,7 +32,7 @@ static int16_t getMinimumTimer(uint8_t limit)
 
 static void print_time(int16_t timeInSeconds)
 {
-	if (timeInSeconds == -1) {
+	if (timeInSeconds < 0) {
 		lcd_print_update_P(1, PSTR("--- "));
 	} else if (timeInSeconds < 60) {
 		// print <timeInSeconds>s
