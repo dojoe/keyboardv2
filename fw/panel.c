@@ -261,11 +261,11 @@ static void pwmled_update(void)
 	if (smaul_led_state_copy != SMAUL_OFF) {
 		smaul_led_osc += smaul_led_frequency;
 		if (smaul_led_state_copy == SMAUL_BLINK) {
-			set_smaul_led((smaul_led_osc & 2048) ? 255 : 0);
+			set_smaul_led((smaul_led_osc & 2048) ? 0 : 255);
 		} else {
 			uint8_t brightness = (smaul_led_osc >> 5) & 63;
-			set_smaul_led((smaul_led_osc & 2048) ? pgm_read_byte(gamma + brightness) :
-					pgm_read_byte(gamma + 63 - brightness));
+			set_smaul_led((smaul_led_osc & 2048) ? pgm_read_byte(gamma + 63 - brightness) :
+					pgm_read_byte(gamma + brightness));
 		}
 	}
 }
@@ -279,12 +279,16 @@ void enable_lcd_backlight(void)
 
 void smaul_pulse(uint8_t frequency)
 {
+	if (smaul_led_state != SMAUL_PULSE)
+		smaul_led_osc = 0;
 	smaul_led_frequency = frequency;
 	smaul_led_state = SMAUL_PULSE;
 }
 
 void smaul_blink(uint8_t frequency)
 {
+	if (smaul_led_state != SMAUL_BLINK)
+		smaul_led_osc = 0;
 	smaul_led_frequency = frequency;
 	smaul_led_state = SMAUL_BLINK;
 }
