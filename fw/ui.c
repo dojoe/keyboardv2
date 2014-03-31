@@ -136,12 +136,9 @@ static void reset_ui_timer(void) {
 	case UIS_MENU_PIZZA3:
 	case UIS_MENU_FIND_KEY:
 	case UIS_MENU_BOOTLOADER:
-		ui_timer = MENU_TIMEOUT_SECONDS;
-		break;
-
 	case UIS_SELECT_TIME:
 	case UIS_FIND_KEY:
-		ui_timer = MENU_TIMEOUT_SELECT_SECONDS;
+		ui_timer = MENU_TIMEOUT_SECONDS;
 		break;
 
 	case UIS_MESSAGE_TIMEOUT:
@@ -243,13 +240,8 @@ static void apply_timer(void) {
 }
 
 static void count_ui_timer(void) {
-	if (ui_timer && !(--ui_timer)) {
-		if (ui_state == UIS_SELECT_TIME) {
-			apply_timer();
-		} else {
+	if (ui_timer && !(--ui_timer))
 			ui_default_state();
-		}
-	}
 }
 
 static void menu_activate(void) {

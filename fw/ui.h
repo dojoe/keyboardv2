@@ -1,8 +1,7 @@
 #ifndef UI_H_
 #define UI_H_
 
-#define MENU_TIMEOUT_SECONDS            30
-#define MENU_TIMEOUT_SELECT_SECONDS	    10
+#define MENU_TIMEOUT_SECONDS            15
 #define UI_MESSAGE_TIMEOUT_SECONDS      15
 
 #define PIZZA_TIMER_DEFAULT_TIME           5 /* minutes */
