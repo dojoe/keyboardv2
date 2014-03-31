@@ -29,11 +29,18 @@ static uint8_t check_expired_timers(void)
 	for (i = 0; i < ARRAY_SIZE(keyTimers); i++) {
 		if (keyTimers[i] == 0) {
 			ui_set_timer_expired(i);
-			return 1;
+			return 0;
 		}
 	}
 
-	return 0;
+	ui_clear_timer_expired();
+	return 1;
+}
+
+uint8_t clearKeyTimeout(uint8_t key)
+{
+	keyTimers[key] = -1;
+	return check_expired_timers();
 }
 
 void key_smaul(void)
@@ -45,23 +52,22 @@ void key_smaul(void)
 		if (keyTimers[i] == 0) {
 			// clear the first key timer -> set + 5 Minutes.
 			keyTimers[i] = 300;
+			check_expired_timers();
 			break;
 		}
 	}
-
-	if (!check_expired_timers())
-		ui_clear_timer_expired();
 }
 
 void key_timer(void)
 {
-	uint8_t i, first = 1;
+	uint8_t i, expired = 0;
 
 	for (i = 0; i < ARRAY_SIZE(keyTimers); i++)
-		if (keyTimers[i] > 0 && !(--keyTimers[i]) && first) {
-			ui_set_timer_expired(i);
-			first = 0;
-		}
+		if (keyTimers[i] > 0 && --keyTimers[i] == 0)
+			expired = 1;
+
+	if (expired)
+		check_expired_timers();
 }
 
 static uint8_t check_key_errors(void)
@@ -136,10 +142,7 @@ static void check_missing_keys(void)
 				ui_select_time(config_idx, k->dfl_timeout, k->max_timeout);
 			} else if (keyIsPresent == 1 && keyTimers[config_idx] >= 0) {
 				// unset a timer because the key came back.
-				clearKeyTimeout(config_idx);
-
-				if (!check_expired_timers()) {
-					ui_clear_timer_expired();
+				if (clearKeyTimeout(config_idx)) {
 					beeper_start(BEEP_SINGLE);
 					lcd_printfP(0, PSTR("Ohai, %s key =D"), config.keys[config_idx].name);
 					ui_short_message();

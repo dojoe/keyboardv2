@@ -256,6 +256,9 @@ void ui_message(uint8_t dest_state)
 
 void ui_set_timer_expired(uint8_t timer_idx)
 {
+	if ((ui_flags & UIF_TIMER_EXPIRED) && expired_timer == timer_idx)
+		return;
+
 	expired_timer = timer_idx;
 	ui_flags |= UIF_TIMER_EXPIRED;
 	ui_default_state();
@@ -269,7 +272,10 @@ void ui_clear_timer_expired(void)
 
 void ui_set_key_error(uint8_t error_type, uint8_t slot_idx)
 {
-	ui_flags |= error_type;
+	if ((ui_flags & UIF_KEY_ERROR) == error_type && error_slot == slot_idx)
+		return;
+
+	ui_flags = (ui_flags & ~UIF_KEY_ERROR) | error_type;
 	error_slot = slot_idx;
 	ui_default_state();
 }
