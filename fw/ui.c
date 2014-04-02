@@ -179,12 +179,13 @@ static void ui_default_state(void) {
 		if (!(ui_flags & UIF_TIMER_EXPIRED)) {
 			lcd_printfP(0, PSTR(""));
 		} else {
-			smaul_blink(220);
 			if (expired_timer < MAX_KEYS) {
+				smaul_sync_to_beeper();
 				beeper_start(BEEP_KEYMISSING);
 				lcd_printfP(0, PSTR("Key %s missing"), config.keys[expired_timer].name);
 			} else {
 				uint8_t n = expired_timer - MAX_KEYS;
+				smaul_blink(220);
 				beeper_start(BEEP_PIZZA1 + n);
 				lcd_printfP(0, PSTR("Pizza %d done"), n + 1);
 			}

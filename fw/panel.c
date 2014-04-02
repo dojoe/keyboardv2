@@ -97,12 +97,13 @@ static void poll_inputs(void)
 
 #define BEEPER_TICK_LENGTH 30
 
-static uint8_t beeper_counter, beeper_tick;
+static uint8_t sync_smaul_to_beeper = 0, beeper_counter, beeper_tick;
 static volatile uint8_t beeper_state;
 
 static void beeper_set(uint8_t on)
 {
-	//set_smaul_led(on ? 255 : 0);
+	if (sync_smaul_to_beeper)
+		set_smaul_led(on ? 255 : 0);
 	shiftregs.beeper = on;
 	shiftreg_update();
 }
@@ -264,6 +265,7 @@ void smaul_pulse(uint8_t frequency)
 {
 	if (smaul_led_state != SMAUL_PULSE)
 		smaul_led_osc = 0;
+	sync_smaul_to_beeper = 0;
 	smaul_led_frequency = frequency;
 	smaul_led_state = SMAUL_PULSE;
 }
@@ -272,12 +274,20 @@ void smaul_blink(uint8_t frequency)
 {
 	if (smaul_led_state != SMAUL_BLINK)
 		smaul_led_osc = 0;
+	sync_smaul_to_beeper = 0;
 	smaul_led_frequency = frequency;
 	smaul_led_state = SMAUL_BLINK;
 }
 
+void smaul_sync_to_beeper(void)
+{
+	smaul_led_state = SMAUL_OFF;
+	sync_smaul_to_beeper = 1;
+}
+
 void smaul_off(void)
 {
+	sync_smaul_to_beeper = 0;
 	smaul_led_state = SMAUL_OFF;
 	set_smaul_led(0);
 }

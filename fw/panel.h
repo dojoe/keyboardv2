@@ -54,6 +54,7 @@ void enable_lcd_backlight(void);
 
 void smaul_pulse(uint8_t frequency);
 void smaul_blink(uint8_t frequency);
+void smaul_sync_to_beeper(void);
 void smaul_off(void);
 
 void keyled_on(uint8_t which);
