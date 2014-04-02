@@ -166,14 +166,12 @@ static void print_missing_keys(void) {
 }
 
 static void ui_default_state(void) {
-	keyleds_off();
-	beeper_stop();
-	smaul_off();
 	enable_lcd_backlight();
 
 	if (ui_flags & UIF_KEY_ERROR) {
 		ui_state = UIS_KEY_ERROR;
 		keyled_blink(error_slot);
+		smaul_pulse_update();
 		beeper_start(BEEP_ERROR);
 
 		switch (ui_flags & UIF_KEY_ERROR) {
@@ -189,20 +187,21 @@ static void ui_default_state(void) {
 		}
 	} else {
 		ui_state = UIS_IDLE;
+		keyleds_off();
 
 		if (!(ui_flags & UIF_TIMER_EXPIRED)) {
+			smaul_pulse_update();
+			beeper_stop();
 			print_missing_keys();
+		} else if (expired_timer < MAX_KEYS) {
+			smaul_sync_to_beeper();
+			beeper_start(BEEP_KEYMISSING);
+			lcd_printfP(0, PSTR("Key %s missing"), config.keys[expired_timer].name);
 		} else {
-			if (expired_timer < MAX_KEYS) {
-				smaul_sync_to_beeper();
-				beeper_start(BEEP_KEYMISSING);
-				lcd_printfP(0, PSTR("Key %s missing"), config.keys[expired_timer].name);
-			} else {
-				uint8_t n = expired_timer - MAX_KEYS;
-				smaul_blink(220);
-				beeper_start(BEEP_PIZZA1 + n);
-				lcd_printfP(0, PSTR("Pizza %d done"), n + 1);
-			}
+			uint8_t n = expired_timer - MAX_KEYS;
+			smaul_blink(220);
+			beeper_start(BEEP_PIZZA1 + n);
+			lcd_printfP(0, PSTR("Pizza %d done"), n + 1);
 		}
 	}
 }
