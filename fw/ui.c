@@ -113,7 +113,7 @@ static void ui_repaint(void) {
 		break;
 
 	case UIS_SELECT_TIME:
-		lcd_printfP(1, PSTR("%02i minutes"), selected_time);
+		lcd_printfP(1, PSTR("Timeout: %02i min"), selected_time);
 		break;
 
 	case UIS_FIND_KEY:
