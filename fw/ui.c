@@ -151,6 +151,20 @@ static void reset_ui_timer(void) {
 	}
 }
 
+static void print_missing_keys(void) {
+	uint8_t i, first = 1;
+
+	lcd_print_start(0);
+	for (i = 0; i < MAX_KEYS; i++) {
+		if (isKeyTimerRunning(i)) {
+			lcd_print_update_P(0, first ? PSTR("Missing: ") : PSTR(", "));
+			first = 0;
+			lcd_print_update_P(0, PSTR("%s"), config.keys[i].name);
+		}
+	}
+	lcd_print_end(0);
+}
+
 static void ui_default_state(void) {
 	keyleds_off();
 	beeper_stop();
@@ -177,7 +191,7 @@ static void ui_default_state(void) {
 		ui_state = UIS_IDLE;
 
 		if (!(ui_flags & UIF_TIMER_EXPIRED)) {
-			lcd_printfP(0, PSTR(""));
+			print_missing_keys();
 		} else {
 			if (expired_timer < MAX_KEYS) {
 				smaul_sync_to_beeper();
