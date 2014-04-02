@@ -324,18 +324,26 @@ void keyleds_off(void)
 }
 
 #define LCD_WIDTH 16
-#define MAX_LCD_LINE 80
+#define MAX_LCD_LINE1 (MAX_KEYS + 1) * (NAME_LENGTH + 2)
+#define MAX_LCD_LINE2 LCD_WIDTH + 1
 #define SCROLL_NUM_SPACES 3
 #define SCROLL_SPEED 3
 #define SCROLL_DELAY 2
 
+static volatile uint8_t max_line_length(uint8_t line)
+{
+	return (line == 0) ? MAX_LCD_LINE1 : MAX_LCD_LINE2;
+}
+
 static volatile uint8_t lcd_writing = 0;
 static volatile uint8_t lcd_needs_update = 0;
 struct lcd_line {
-	char text[MAX_LCD_LINE + SCROLL_NUM_SPACES + LCD_WIDTH];
+	char *text;
 	uint8_t len, pos, delay;
 };
-static struct lcd_line lcd_lines[2];
+static char lcd_line1[MAX_LCD_LINE1 + SCROLL_NUM_SPACES + LCD_WIDTH];
+static char lcd_line2[MAX_LCD_LINE2];
+static struct lcd_line lcd_lines[2] = { { lcd_line1 }, { lcd_line2 } };
 
 void lcd_print_start(uint8_t line)
 {
@@ -348,11 +356,11 @@ void lcd_print_update_P(uint8_t line, const char *fmt, ...)
 	va_list varargs;
 	struct lcd_line *l = lcd_lines + line;
 
-	if (l->len >= MAX_LCD_LINE - 1)
+	if (l->len >= max_line_length(line) - 1)
 		return;
 
 	va_start(varargs, fmt);
-	l->len += vsnprintf_P(l->text + l->len, MAX_LCD_LINE - l->len, fmt, varargs);
+	l->len += vsnprintf_P(l->text + l->len, max_line_length(line) - l->len, fmt, varargs);
 	va_end(varargs);
 }
 
@@ -382,7 +390,7 @@ void lcd_printfP(uint8_t line, const char *fmt, ...)
 
 	lcd_print_start(line);
 	va_start(varargs, fmt);
-	lcd_lines[line].len = vsnprintf_P(lcd_lines[line].text, MAX_LCD_LINE, fmt, varargs);
+	lcd_lines[line].len = vsnprintf_P(lcd_lines[line].text, max_line_length(line), fmt, varargs);
 	va_end(varargs);
 	lcd_print_end(line);
 }
