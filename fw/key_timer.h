@@ -6,13 +6,18 @@
 #ifndef KEY_TIMER_H_
 #define KEY_TIMER_H_
 
-extern uint8_t expired_key;
 extern int16_t keyTimers[MAX_KEYS + NUM_PIZZA_TIMERS];
+extern uint8_t keyMissing[MAX_KEYS];
 
 void initTimers(void);
 void key_change(void);
 void key_smaul(void);
 void key_timer(void);
+
+static inline uint8_t isKeyMissing(uint8_t key)
+{
+	return keyMissing[key];
+}
 
 static inline void setKeyTimeout(uint8_t key, uint8_t minutes)
 {

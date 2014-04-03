@@ -30,6 +30,15 @@ static int16_t getMinimumTimer(uint8_t limit)
 	return (min == INT16_MAX) ? -1 : min;
 }
 
+static uint8_t isAnyKeyMissing(void)
+{
+	uint8_t i;
+	for (i = 0; i < MAX_KEYS; i++)
+		if (isKeyMissing(i))
+			return 1;
+	return 0;
+}
+
 static void print_time(int16_t timeInSeconds)
 {
 	if (timeInSeconds < 0) {
@@ -61,7 +70,10 @@ void smaul_pulse_update(void)
 
 	min = getMinimumTimer(MAX_KEYS + NUM_PIZZA_TIMERS);
 	if (min < 0) {
-		smaul_off();
+		if (isAnyKeyMissing())
+			smaul_pulse(6);
+		else
+			smaul_off();
 	} else if (min >= ((ARRAY_SIZE(smaul_freq) - 1) * INTERP_FACTOR)) {
 		smaul_pulse(6);
 	} else {
@@ -156,7 +168,7 @@ static void print_missing_keys(void) {
 
 	lcd_print_start(0);
 	for (i = 0; i < MAX_KEYS; i++) {
-		if (isKeyTimerRunning(i)) {
+		if (isKeyMissing(i)) {
 			lcd_print_update_P(0, first ? PSTR("Missing: ") : PSTR(", "));
 			first = 0;
 			lcd_print_update_P(0, PSTR("%s"), config.keys[i].name);

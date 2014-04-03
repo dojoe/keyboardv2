@@ -10,7 +10,10 @@
 
 // the key-timers.
 int16_t keyTimers[MAX_KEYS + NUM_PIZZA_TIMERS];
-uint8_t expired_key = 0;
+uint8_t keyMissing[MAX_KEYS] = { 0 };
+
+/* Number of keys missing that need the rotating light */
+static uint8_t rotlight_counter = 0;
 
 void initTimers(void)
 {
@@ -111,6 +114,41 @@ static uint8_t check_key_errors(void)
 	return 0;
 }
 
+static void setKeyMissing(uint8_t config_idx)
+{
+	struct key_info *k = config.keys + config_idx;
+
+	keyMissing[config_idx] = 1;
+	if (k->flags & KF_BEEP)
+		setKeyTimeout(config_idx, k->dfl_timeout);
+	if ((k->flags & KF_ROTLIGHT) && rotlight_counter++ == 0)
+		rotlight_on();
+
+	if (!ui_flags)
+		beeper_start(BEEP_SINGLE);
+	lcd_printfP(0, PSTR("Obai, %s key o/"), k->name);
+
+	if (k->flags & KF_BEEP)
+		ui_select_time(config_idx, k->dfl_timeout, k->max_timeout);
+	else
+		ui_short_message();
+}
+
+static void setKeyReturned(uint8_t config_idx)
+{
+	struct key_info *k = config.keys + config_idx;
+
+	keyMissing[config_idx] = 0;
+	if ((k->flags & KF_ROTLIGHT) && --rotlight_counter == 0)
+		rotlight_off();
+
+	if (clearKeyTimeout(config_idx)) {
+		beeper_start(BEEP_SINGLE);
+		lcd_printfP(0, PSTR("Ohai, %s key =D"), config.keys[config_idx].name);
+		ui_short_message();
+	}
+}
+
 static void check_missing_keys(void)
 {
 	uint8_t config_idx, slot_idx;
@@ -132,22 +170,10 @@ static void check_missing_keys(void)
 			}
 
 			// if the key is not present, check if we need an alarm.
-			if (keyIsPresent == 0 && keyTimers[config_idx] == -1) {
-				// set a timer because the key vanished
-				struct key_info *k = config.keys + config_idx;
-				setKeyTimeout(config_idx, k->dfl_timeout);
-				if (!ui_flags)
-					beeper_start(BEEP_SINGLE);
-				lcd_printfP(0, PSTR("Obai, %s key o/"), k->name);
-				ui_select_time(config_idx, k->dfl_timeout, k->max_timeout);
-			} else if (keyIsPresent == 1 && keyTimers[config_idx] >= 0) {
-				// unset a timer because the key came back.
-				if (clearKeyTimeout(config_idx)) {
-					beeper_start(BEEP_SINGLE);
-					lcd_printfP(0, PSTR("Ohai, %s key =D"), config.keys[config_idx].name);
-					ui_short_message();
-				}
-			}
+			if (keyIsPresent == 0 && !keyMissing[config_idx])
+				setKeyMissing(config_idx);
+			else if (keyIsPresent == 1 && keyMissing[config_idx])
+				setKeyReturned(config_idx);
 		}
 	}
 }

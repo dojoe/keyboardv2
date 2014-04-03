@@ -50,6 +50,9 @@ void beeper_enable(uint8_t enable);
 #define LCD_LED_UP   42
 #define LCD_LED_DOWN 3
 
+void rotlight_on(void);
+void rotlight_off(void);
+
 void enable_lcd_backlight(void);
 
 void smaul_pulse(uint8_t frequency);

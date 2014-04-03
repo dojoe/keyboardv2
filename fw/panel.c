@@ -177,6 +177,42 @@ void beeper_enable(uint8_t enable)
 	}
 }
 
+#define ROTLIGHT_ON_SECS     30
+#define ROTLIGHT_OFF_SECS 15*60
+
+static uint8_t rotlight_active = 0;
+static uint16_t rotlight_timer;
+
+static void rotlight_update(void)
+{
+	if (rotlight_active) {
+		rotlight_timer++;
+		if (rotlight_timer == ROTLIGHT_ON_SECS) {
+			shiftregs.rotlight = 0;
+			shiftreg_update();
+		} else if (rotlight_timer == ROTLIGHT_ON_SECS + ROTLIGHT_OFF_SECS) {
+			rotlight_timer = 0;
+			shiftregs.rotlight = 1;
+			shiftreg_update();
+		}
+	}
+}
+
+void rotlight_on(void)
+{
+	shiftregs.rotlight = 1;
+	shiftreg_update();
+	rotlight_timer = 0;
+	rotlight_active = 1;
+}
+
+void rotlight_off(void)
+{
+	rotlight_active = 0;
+	shiftregs.rotlight = 0;
+	shiftreg_update();
+}
+
 enum lcd_led_state {
 	LCD_NONE = 0,
 	LCD_BRIGHT,
@@ -448,6 +484,7 @@ ISR(TIMER3_OVF_vect)
 		if ((global_qs_timer & 1) == 0 && !lcd_writing)
 			lcd_scroll();
 		if ((global_qs_timer & 3) == 0) {
+			rotlight_update();
 			push_event(EV_TICK);
 			if (lcd_led_timer && !(--lcd_led_timer))
 				lcd_led_state = LCD_DARK;
