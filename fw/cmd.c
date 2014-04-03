@@ -45,6 +45,8 @@ beeper on|off\n\
    Enable or disable the beeper, so it doesn't annoy you while you program keys\n\
 boot\n\
    Jump into DFU bootloader for firmware update\n\
+reset\n\
+   Reset keyboard to apply configuration changes\n\
 \n\
 Common parameter types:\n\
    ID   - decimal 1-255, zero is reserved\n\
@@ -54,7 +56,7 @@ Common parameter types:\n\
 
 static void ok(void)
 {
-	printf_P(PSTR("OK\n"));
+	printf_P(config_changed ? PSTR("OK -- config changed, remember to reset when done!\n") : PSTR("OK\n"));
 }
 
 static uint8_t check_kb_setup(void)
@@ -67,6 +69,11 @@ static uint8_t check_kb_setup(void)
 static void boot(char *argv[])
 {
 	call_bootloader();
+}
+
+static void reset(char *argv[])
+{
+	reset_system();
 }
 
 static void beeper(char *argv[])
@@ -302,6 +309,7 @@ static const PROGMEM struct cmd_def commands[] = {
 		{ "help",         help, 0 },
 		{ "?",            help, 0 },
 		{ "boot",         boot, 0 },
+		{ "reset",        reset, 0 },
 		{ "beeper",       beeper, 1 },
 		{ "show_keys",    show_keys, 0 },
 		{ "show_config",  show_config, 0 },

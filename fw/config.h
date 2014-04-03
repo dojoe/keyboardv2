@@ -10,6 +10,7 @@ struct config {
 };
 
 extern struct config config;
+extern uint8_t config_changed;
 
 void save_config(void);
 void load_config(void);

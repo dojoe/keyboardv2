@@ -3,12 +3,14 @@
 #include "config.h"
 
 struct config config;
+uint8_t config_changed = 0;
 
 struct config EEMEM config_eep = {{ 0 }};
 
 void save_config(void)
 {
 	eeprom_update_block(&config, &config_eep, sizeof(config));
+	config_changed = 1;
 }
 
 void load_config(void)

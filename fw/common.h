@@ -30,6 +30,16 @@ uint8_t get_event(void);
 extern volatile uint8_t global_ms_timer;
 extern volatile uint8_t global_qs_timer;
 
-void call_bootloader(void) __attribute__((noreturn));
+void watchdog_reset(uint8_t to_bootloader) __attribute__((noreturn));
+
+static inline void reset_system(void)
+{
+	watchdog_reset(0);
+}
+
+static inline void call_bootloader(void)
+{
+	watchdog_reset(1);
+}
 
 #endif /* COMMON_H_ */

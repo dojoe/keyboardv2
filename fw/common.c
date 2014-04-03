@@ -51,11 +51,12 @@ void bootloader_check(void)
 	}
 }
 
-void call_bootloader(void)
+void watchdog_reset(uint8_t to_bootloader)
 {
 	USB_Disable();
 	cli();
-	boot_key = BOOT_KEY_MAGIC;
+	if (to_bootloader)
+		boot_key = BOOT_KEY_MAGIC;
 	_delay_ms(2000);
 	wdt_enable(WDTO_30MS);
 	while (1);
