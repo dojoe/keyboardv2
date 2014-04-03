@@ -4,6 +4,13 @@
 /* Use to enable some debug features, like jumping to the bootloader from the front panel menu */
 #define DEBUG 0
 
+#if DEBUG
+#define DEBUG_VERSION "-debug"
+#else
+#define DEBUG_VERSION
+#endif
+#define FW_VERSION "0.9" DEBUG_VERSION
+
 #include "hw.h"
 
 enum events {

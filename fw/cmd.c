@@ -14,7 +14,7 @@ static uint8_t busy = 0;
 static void help(char *argv[])
 {
 	printf_P(PSTR("\n\
-          == H A L P ==\n\
+          == H A L P (FW v" FW_VERSION ") ==\n\
 \n\
 show_keys\n\
    Show currently plugged keys\n\
