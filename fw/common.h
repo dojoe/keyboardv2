@@ -1,6 +1,9 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
+/* Use to enable some debug features, like jumping to the bootloader from the front panel menu */
+#define DEBUG 0
+
 #include "hw.h"
 
 enum events {

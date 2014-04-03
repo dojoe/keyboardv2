@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include "hw.h"
 #include "lcd_drv.h"
@@ -314,16 +313,11 @@ static void menu_activate(void) {
 }
 
 static void menu_button_forward(void) {
-	switch (ui_state) {
-	case UIS_MENU_FIND_KEY:
-	case UIS_MENU_PIZZA1:
-	case UIS_MENU_PIZZA2:
-	case UIS_MENU_PIZZA3:
+	if (ui_state >= UIS_MENU_FIRST && ui_state < UIS_MENU_LAST)
 		ui_state++;
-		break;
-
-	case UIS_MENU_BOOTLOADER:
-		ui_state = UIS_MENU_FIND_KEY;
+	else switch (ui_state) {
+	case UIS_MENU_LAST:
+		ui_state = UIS_MENU_FIRST;
 		break;
 
 	case UIS_SELECT_TIME:
@@ -340,16 +334,11 @@ static void menu_button_forward(void) {
 }
 
 static void menu_button_back(void) {
-	switch (ui_state) {
-	case UIS_MENU_FIND_KEY:
-		ui_state = UIS_MENU_BOOTLOADER;
-		break;
-
-	case UIS_MENU_PIZZA1:
-	case UIS_MENU_PIZZA2:
-	case UIS_MENU_PIZZA3:
-	case UIS_MENU_BOOTLOADER:
+	if (ui_state > UIS_MENU_FIRST && ui_state <= UIS_MENU_LAST)
 		ui_state--;
+	else switch (ui_state) {
+	case UIS_MENU_FIRST:
+		ui_state = UIS_MENU_LAST;
 		break;
 
 	case UIS_SELECT_TIME:
