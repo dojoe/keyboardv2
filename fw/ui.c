@@ -188,13 +188,13 @@ static void ui_default_state(void) {
 
 		switch (ui_flags & UIF_KEY_ERROR) {
 		case UIF_KEY_ERROR_READ_ERR:
-			lcd_printfP(0, PSTR("Read error in slot %d"), error_slot + 1);
+			lcd_printfP(0, PSTR("Error reading key"));
 			break;
 		case UIF_KEY_ERROR_UNKNOWN:
 			lcd_printfP(0, PSTR("Unknown key %d (\"%s\")"), keys[error_slot].eep.key.id, keys[error_slot].eep.key.name);
 			break;
 		case UIF_KEY_ERROR_OTHER_KB:
-			lcd_printfP(0, PSTR("Invalid key; belongs to %s"), keys[error_slot].eep.kb.name);
+			lcd_printfP(0, PSTR("Key belongs to %s keyboard"), keys[error_slot].eep.kb.name);
 			break;
 		}
 	} else {
