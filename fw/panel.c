@@ -51,10 +51,13 @@ static void shiftreg_reset(void)
 
 void shiftreg_update(void)
 {
+	cli();
+	SPCR = 0;
 	SPSR = 0;
-	SPCR = (1 << SPIE) | SPI_SETTINGS;
 	shiftreg_state = 0;
+	SPCR = (1 << SPIE) | SPI_SETTINGS;
 	SPDR = shiftreg_bytes[0];
+	sei();
 }
 
 uint8_t inputs_prev = 0, inputs_debounced = 0, inputs_debounced_prev = 0;
@@ -104,7 +107,9 @@ static void beeper_set(uint8_t on)
 {
 	if (sync_smaul_to_beeper)
 		set_smaul_led(on ? 255 : 0);
+	cli();
 	shiftregs.beeper = on;
+	sei();
 	shiftreg_update();
 }
 
@@ -188,11 +193,15 @@ static void rotlight_update(void)
 	if (rotlight_active) {
 		rotlight_timer++;
 		if (rotlight_timer == ROTLIGHT_ON_SECS) {
+			cli();
 			shiftregs.rotlight = 0;
+			sei();
 			shiftreg_update();
 		} else if (rotlight_timer == ROTLIGHT_ON_SECS + ROTLIGHT_OFF_SECS) {
 			rotlight_timer = 0;
+			cli();
 			shiftregs.rotlight = 1;
+			sei();
 			shiftreg_update();
 		}
 	}
@@ -200,7 +209,9 @@ static void rotlight_update(void)
 
 void rotlight_on(void)
 {
+	cli();
 	shiftregs.rotlight = 1;
+	sei();
 	shiftreg_update();
 	rotlight_timer = 0;
 	rotlight_active = 1;
@@ -209,7 +220,9 @@ void rotlight_on(void)
 void rotlight_off(void)
 {
 	rotlight_active = 0;
+	cli();
 	shiftregs.rotlight = 0;
+	sei();
 	shiftreg_update();
 }
 
@@ -334,7 +347,9 @@ static void keyleds_update(void)
 {
 	uint8_t led_blink_mask_copy = led_blink_mask;
 	if (led_blink_mask_copy && (global_qs_timer & 1)) {
+		cli();
 		shiftregs.leds ^= led_blink_mask_copy;
+		sei();
 		shiftreg_update();
 	}
 }
@@ -342,20 +357,26 @@ static void keyleds_update(void)
 void keyled_on(uint8_t which)
 {
 	led_blink_mask = 0;
+	cli();
 	shiftregs.leds = 1 << which;
+	sei();
 	shiftreg_update();
 }
 
 void keyled_blink(uint8_t which)
 {
+	cli();
 	shiftregs.leds = 0;
+	sei();
 	led_blink_mask = 1 << which;
 }
 
 void keyleds_off(void)
 {
 	led_blink_mask = 0;
+	cli();
 	shiftregs.leds = 0;
+	sei();
 	shiftreg_update();
 }
 

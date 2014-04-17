@@ -1,5 +1,6 @@
 #include <string.h>
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 #include <util/crc16.h>
 #include "common.h"
@@ -123,8 +124,10 @@ void key_poll(void)
 
 	switch (keymgr_state) {
 	case KMS_IDLE:
+		cli();
 		shiftregs.key_sel = current_key;
 		shiftregs.key_en  = 0; // note negative logic
+		sei();
 		shiftreg_update();
 		keymgr_state = KMS_SELECT;
 		break;
