@@ -18,10 +18,11 @@ enum keymgr_state {
 	KMS_XFER_OK  = 5,
 	KMS_XFER_ERR = 6,
 	KMS_DISABLE  = 7,
+	KMS_WAIT     = 8,
 };
 
 static uint8_t current_key = 0;
-static uint8_t keymgr_state = KMS_IDLE;
+static uint8_t keymgr_state;
 static uint8_t wait_ms;
 
 static uint8_t programming = 0;
@@ -31,9 +32,25 @@ struct key_eeprom_data key_xfer_data;
 
 struct key_socket keys[MAX_KEYS];
 
+static inline void idle(void)
+{
+	keymgr_state = in_test_mode() ? KMS_WAIT : KMS_IDLE;
+}
+
 void key_init(void)
 {
 	memset(&keys, 0, sizeof(keys));
+	idle();
+}
+
+void key_test_sel_slot(uint8_t slot)
+{
+	current_key = slot;
+}
+
+void key_test_start_scan(void)
+{
+	keymgr_state = KMS_IDLE;
 }
 
 static void key_xfer_cb(uint8_t success)
@@ -42,15 +59,54 @@ static void key_xfer_cb(uint8_t success)
 	keymgr_state = success ? KMS_XFER_OK : KMS_XFER_ERR;
 }
 
-static void key_disable(void)
+static void key_select(void)
+{
+	cli();
+	shiftregs.key_sel = current_key;
+	shiftregs.key_en  = 0; // note negative logic
+	sei();
+	shiftreg_update();
+}
+
+static void key_deselect(void)
+{
+	cli();
+	shiftregs.key_en = 1; // note negative logic
+	sei();
+	shiftreg_update();
+}
+
+static void key_power_on(void)
+{
+	PWR_PORT |= PWR_BIT;
+	PWR_DDR  |= PWR_BIT;
+}
+
+static void key_power_off(void)
 {
 	PWR_PORT &= ~PWR_BIT;
 	PWR_DDR  |=  PWR_BIT;
 }
 
+void key_test_enable_key(uint8_t enable)
+{
+	if (enable)
+		key_select();
+	else
+		key_deselect();
+}
+
+void key_test_power_key(uint8_t enable)
+{
+	if (enable)
+		key_power_on();
+	else
+		key_power_off();
+}
+
 static void key_disable_and_next(void)
 {
-	key_disable();
+	key_power_off();
 	programming = 0;
 	wait_ms = global_ms_timer;
 	keymgr_state = KMS_DISABLE;
@@ -95,17 +151,14 @@ void key_program(uint8_t slot, struct key_eeprom_data *data, key_program_cb cb)
 {
 	/* Abort whatever the key manager was just in the process of doing */
 	eep_abort();
-	key_disable();
-	keymgr_state = KMS_IDLE;
+	key_power_off();
+	idle();
 	current_key = slot;
 	program_cb = cb;
 	programming = 1;
 	key_xfer_data = *data;
 	key_xfer_data.crc16 = calc_key_crc();
 }
-
-#include <stdio.h>
-#include "lcd_drv.h"
 
 static inline uint8_t wait_done(uint8_t ms)
 {
@@ -115,20 +168,17 @@ static inline uint8_t wait_done(uint8_t ms)
 
 void key_poll(void)
 {
-	if (0) {
-		char str[30];
-		sprintf(str, " %d %d %03d %03d %d %d %d %d %d %d %d %d", keymgr_state, current_key, global_ms_timer, wait_ms,
-				keys[0].state, keys[1].state, keys[2].state, keys[3].state, keys[4].state, keys[5].state, keys[6].state, keys[7].state);
-		lcd_puts(str);
+	if (in_test_mode()) {
+		lcd_printfP(0, PSTR(" %d %d"), keymgr_state, current_key);
+		lcd_printfP(1, PSTR("%d %d %d %d %d %d %d %d"), keys[0].state, keys[1].state, keys[2].state, keys[3].state, keys[4].state, keys[5].state, keys[6].state, keys[7].state);
 	}
 
 	switch (keymgr_state) {
+	case KMS_WAIT:
+		break;
+
 	case KMS_IDLE:
-		cli();
-		shiftregs.key_sel = current_key;
-		shiftregs.key_en  = 0; // note negative logic
-		sei();
-		shiftreg_update();
+		key_select();
 		keymgr_state = KMS_SELECT;
 		break;
 
@@ -165,9 +215,7 @@ void key_poll(void)
 			break;
 		}
 
-		/* Turn on the key power */
-		PWR_PORT |= PWR_BIT;
-		PWR_DDR  |= PWR_BIT;
+		key_power_on();
 		wait_ms = global_ms_timer;
 		keymgr_state = KMS_ENABLE;
 		break;
@@ -219,8 +267,9 @@ void key_poll(void)
 		if (wait_done(2))
 			break;
 
-		current_key = (current_key >= MAX_KEYS - 1) ? 0 : (current_key + 1);
-		keymgr_state = KMS_IDLE;
+		if (!in_test_mode())
+			current_key = (current_key >= MAX_KEYS - 1) ? 0 : (current_key + 1);
+		idle();
 		break;
 	}
 }

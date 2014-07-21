@@ -76,6 +76,11 @@ static void reset(char *argv[])
 	reset_system();
 }
 
+static void test_mode(char *argv[])
+{
+	enter_test_mode();
+}
+
 static void beeper(char *argv[])
 {
 	if (!strcmp_P(argv[1], PSTR("off"))) {
@@ -294,6 +299,26 @@ static void show_config(char *argv[])
 	printf_P(PSTR("# END Keyboard v2 config dump\n"));
 }
 
+static void set_slot(char *argv[])
+{
+	key_test_sel_slot(atoi(argv[1]));
+}
+
+static void scan_key(char *argv[])
+{
+	key_test_start_scan();
+}
+
+static void key_enable(char *argv[])
+{
+	key_test_enable_key(atoi(argv[1]));
+}
+
+static void key_power(char *argv[])
+{
+	key_test_power_key(atoi(argv[1]));
+}
+
 #define CMD_MAX 12+1
 #define MAX_ARGC 10
 
@@ -309,6 +334,7 @@ static const PROGMEM struct cmd_def commands[] = {
 		{ "help",         help, 0 },
 		{ "?",            help, 0 },
 		{ "boot",         boot, 0 },
+		{ "test_mode",    test_mode, 0 },
 		{ "reset",        reset, 0 },
 		{ "beeper",       beeper, 1 },
 		{ "show_keys",    show_keys, 0 },
@@ -319,7 +345,14 @@ static const PROGMEM struct cmd_def commands[] = {
 		{ "clear_keys",   clear_keys, 0 },
 		{ "capture_keys", capture_keys, 0 },
 		{ "program_key",  program_key, 6 },
+		/* Test mode commands after this line */
+		{ "set_slot",     set_slot, 1 },
+		{ "scan_key",     scan_key, 0 },
+		{ "key_enable",   key_enable, 1 },
+		{ "key_power",    key_power, 1 },
 };
+
+#define NUM_USER_COMMANDS 14
 
 void handle_command(char *cmd)
 {
@@ -341,7 +374,7 @@ void handle_command(char *cmd)
 	argv[0] = strtok_r(cmd, " ", &tmp);
 
 	/* Identify command */
-	for (i = 0; i < ARRAY_SIZE(commands); i++) {
+	for (i = 0; i < (in_test_mode() ? ARRAY_SIZE(commands) : NUM_USER_COMMANDS); i++) {
 		if (strcmp_P(argv[0], commands[i].cmd))
 			continue;
 

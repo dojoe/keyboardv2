@@ -35,8 +35,10 @@ uint8_t get_event(void)
 /* Bootloader jump code adapted from http://www.fourwalledcubicle.com/files/LUFA/Doc/120219/html/_page__software_bootloader_start.html */
 
 uint32_t boot_key ATTR_NO_INIT;
+uint8_t g_test_mode ATTR_NO_INIT;
 
-#define BOOT_KEY_MAGIC 0xCAFEBABE
+#define BOOT_KEY_MAGIC  0xCAFEBABE
+#define TEST_MODE_MAGIC 0xABADF00D
 
 void bootloader_check(void) ATTR_INIT_SECTION(3);
 void bootloader_check(void)
@@ -49,14 +51,20 @@ void bootloader_check(void)
 		boot_key = 0;
 		((void (*)(void))BOOTLOADER_START_ADDRESS)();
 	}
+	g_test_mode = ((MCUSR & (1 << WDRF)) && (boot_key == TEST_MODE_MAGIC));
+	boot_key = 0;
 }
 
-void watchdog_reset(uint8_t to_bootloader)
+void watchdog_reset(uint8_t where)
 {
 	USB_Disable();
 	cli();
-	if (to_bootloader)
+
+	if (where == WDR_BOOTLOADER)
 		boot_key = BOOT_KEY_MAGIC;
+	else if (where == WDR_TESTMODE)
+		boot_key = TEST_MODE_MAGIC;
+
 	_delay_ms(2000);
 	wdt_enable(WDTO_30MS);
 	while (1);

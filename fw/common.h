@@ -9,7 +9,7 @@
 #else
 #define DEBUG_VERSION
 #endif
-#define FW_VERSION "0.9" DEBUG_VERSION
+#define FW_VERSION "0.91" DEBUG_VERSION
 
 #include "hw.h"
 
@@ -40,16 +40,30 @@ uint8_t get_event(void);
 extern volatile uint8_t global_ms_timer;
 extern volatile uint8_t global_qs_timer;
 
-void watchdog_reset(uint8_t to_bootloader) __attribute__((noreturn));
+static inline uint8_t in_test_mode(void) {
+	extern uint8_t g_test_mode;
+	return g_test_mode;
+}
+
+#define WDR_RESET      0
+#define WDR_BOOTLOADER 1
+#define WDR_TESTMODE   2
+
+void watchdog_reset(uint8_t where) __attribute__((noreturn));
 
 static inline void reset_system(void)
 {
-	watchdog_reset(0);
+	watchdog_reset(WDR_RESET);
 }
 
 static inline void call_bootloader(void)
 {
-	watchdog_reset(1);
+	watchdog_reset(WDR_BOOTLOADER);
+}
+
+static inline void enter_test_mode(void)
+{
+	watchdog_reset(WDR_TESTMODE);
 }
 
 #endif /* COMMON_H_ */

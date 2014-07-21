@@ -48,4 +48,9 @@ void key_init(void);
 void key_poll(void);
 void key_program(uint8_t slot, struct key_eeprom_data *data, key_program_cb cb);
 
+void key_test_sel_slot(uint8_t slot);
+void key_test_start_scan(void);
+void key_test_enable_key(uint8_t enable);
+void key_test_power_key(uint8_t enable);
+
 #endif /* KEY_H_ */

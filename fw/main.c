@@ -50,7 +50,8 @@ static void setup(void)
 	load_config();
 	lcd_init();
 	panel_init();
-	ui_init();
+	if (!in_test_mode())
+		ui_init();
 
 	usb_init();
 }
@@ -68,6 +69,7 @@ int main(void)
 		eep_poll();
 		key_poll();
 		lcd_poll();
-		ui_poll();
+		if (!in_test_mode())
+			ui_poll();
 	}
 }
